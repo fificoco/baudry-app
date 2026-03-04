@@ -1,0 +1,593 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Le reset global box-sizing ne doit pas s'appliquer aux images des tuiles Leaflet */
+.leaflet-container img {
+    box-sizing: content-box !important;
+}
+html,
+body {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    touch-action: none;
+}
+
+header {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    top: 5vh;
+    left: 0;
+    width: 50%;
+    padding: 1.5vh 1vw;
+    z-index: 1005;
+}
+
+.contLogo {
+    position: fixed;
+    top: 10px;
+    left: 20px;
+    width: 160px;
+    height: 95px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 1006;
+}
+
+.cls-1 {
+    fill: none;
+}
+
+.cls-2 {
+    clip-path: url(#clippath);
+}
+
+#menuBurger {
+    display: none;
+}
+
+#burgerGroup {
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    #burgerGroup:hover #menuBurgerHover {
+        display: none;
+    }
+
+    #burgerGroup:hover #menuBurger {
+        display: block;
+    }
+}
+
+.agency-select {
+    margin: 5px 0;
+    outline: none;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 5px;
+    font-size: 14px;
+    border: 1px solid #c8c8c8;
+    background: #333;
+    color: #f8f8f8;
+}
+
+.btnMenuPerso {
+    width: 30px;
+    height: 30px;
+    border-radius: 25px;
+    background: rgba(0, 0, 0, 0.218);
+    border: 1px solid rgba(0, 0, 0, 0.101);
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.8;
+    margin: 0 auto 8px 0;
+    flex-shrink: 0;
+}
+
+.btnMenuPerso:hover {
+    opacity: 1;
+}
+
+.sidebar {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    top: 115px;
+    left: -300px;
+    width: 200px;
+    height: calc(100% - 115px);
+    transition: left 0.3s ease;
+    padding: 20px 20px 20px 10px;
+    z-index: 1000;
+    overflow-y: auto;
+    direction: rtl;
+    scrollbar-gutter: stable;
+}
+
+.sidebar.open {
+    left: 0;
+}
+
+.sidebar > * {
+    direction: ltr;
+    width: 100%;
+}
+
+.sidebar > .btnMenuPerso {
+    width: 30px;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar h3 {
+    margin-bottom: 15px;
+}
+
+.sidebar input {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #cccccc;
+    box-sizing: border-box;
+    text-align: center !important;
+    -webkit-text-align: center;
+    -webkit-appearance: none;
+}
+
+.sidebar input::placeholder {
+    text-align: center;
+}
+
+.sidebar button.validate {
+    background: #F7C600;
+    color: white;
+    border: rgba(0, 0, 0, 0.237) 1px solid;
+    width: 52%;
+    margin: 0 auto 8px 0;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.sidebar button.validate:hover {
+    background: #d4aa00;
+}
+
+.btnStyle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 13px;
+    color: black;
+    background-color: white;
+    border-radius: 15px;
+    border: rgba(0, 0, 0, 0.237) 1px solid;
+    width: 52%;
+    margin: 0 auto 8px 0;
+    padding: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btnStyle:hover {
+    background-color: #5555557e;
+    color: white;
+}
+
+.reset,
+.validate {
+    border-radius: 15px;
+}
+
+.nav-buttons {
+    margin: 20px 0;
+}
+
+.coord-corrector {
+    margin-top: 4px;
+    width: 100%;
+}
+
+#correctionStatus {
+    margin: 4px 0 10px 0;
+    font-size: 12px;
+    color: #222;
+    min-height: 16px;
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+#result-zone {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.resultZone-style-temp {
+    color: black;
+}
+
+#result-zone.resultZone-hors-zone {
+    color: red !important;
+}
+
+.zone-panel {
+    position: fixed;
+    top: 50px;
+    right: -400px;
+    width: 350px;
+    max-height: 90vh;
+    padding: 20px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
+    z-index: 9999;
+}
+
+.zone-panel h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+#add-zone,
+#save-zones {
+    display: inline-block;
+    margin: 8px 4px 0 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    background: #ddd;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#add-zone:hover,
+#save-zones:hover {
+    background: #ccc;
+}
+
+datalist option {
+    font-size: 14px;
+    color: #333;
+    padding: 4px;
+}
+
+input[list] {
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center !important;
+    -webkit-text-align: center;
+    -webkit-appearance: none;
+}
+
+input[list]::placeholder {
+    text-align: center;
+}
+
+#villeInput,
+#cpInput {
+    text-align: center !important;
+    -webkit-text-align: center !important;
+    direction: ltr;
+}
+
+#villeInput::placeholder,
+#cpInput::placeholder {
+    text-align: center !important;
+}
+
+.sidebar button.reset {
+    background: #e74c3c;
+    border: rgba(0, 0, 0, 0.237) 1px solid;
+    width: 52%;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    margin: 0 auto 8px 0;
+}
+
+.sidebar button.reset:hover {
+    background: #c0392b;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content h2 {
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    color: #333;
+    text-align: center;
+}
+
+.zone-inputs .zone-row {
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.zone-row label {
+    font-size: 14px;
+    margin-right: 5px;
+}
+
+.zone-row input[type="number"] {
+    width: 70px;
+    padding: 4px;
+    font-size: 13px;
+}
+
+.zone-row input[type="color"] {
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+.zone-row button {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 8px;
+    font-size: 13px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.zone-row button:hover {
+    background: #c0392b;
+}
+
+.modal-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.modal-actions button {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 15px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#addZone {
+    background-color: #2980b9;
+    color: white;
+}
+
+#addZone:hover {
+    background-color: #21618c;
+}
+
+#saveZones {
+    background-color: #27ae60;
+    color: white;
+}
+
+#saveZones:hover {
+    background-color: #1e8449;
+}
+
+#resetZones {
+    background-color: #e74c3c;
+    color: white;
+}
+
+#resetZones:hover {
+    background-color: #c0392b;
+}
+
+#closeModal {
+    background-color: #333;
+    color: white;
+}
+
+#closeModal:hover {
+    background-color: #555;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ✅ Petit mobile (ex : iPhone SE) */
+@media screen and (max-width: 420px) {
+    .sidebar {
+      width: 90vw;
+      left: -100vw;
+      align-items: center;
+      padding: 20px 15px;
+    }
+    .sidebar.open {
+      left: 5vw;
+    }
+    .sidebar h3,
+    .sidebar p,
+    .sidebar label,
+    .sidebar input,
+    .sidebar select,
+    .agency-select,
+    #result-zone {
+      text-align: center;
+    }
+    .sidebar button.validate,
+    .sidebar button.reset,
+    .btnStyle {
+      margin: 0 auto 8px auto;
+    }
+    .sidebar > .btnMenuPerso {
+      margin: 0 auto 8px auto;
+    }
+  }
+  
+  /* ✅ Téléphones jusqu’à 767px */
+  @media screen and (min-width: 481px) and (max-width: 767px) {
+    .sidebar {
+      width: 80vw;
+      left: -85vw;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    #menuBurger {
+      width: 40px;
+      height: auto;
+    }
+  }
+  
+  /* ✅ Tablette (jusqu'à iPad Pro) */
+  @media screen and (max-width: 1024px) {
+    .sidebar {
+      width: 300px;
+      left: -320px;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+  }
+  
+  /* ✅ Desktop classique */
+  @media screen and (max-width: 1280px) {
+    .sidebar {
+      width: 260px;
+      left: -280px;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+  }
+  
+  /* ✅ Grand écran (plus de 1280px) */
+  @media screen and (min-width: 1281px) {
+    .sidebar {
+      width: 260px;
+      left: -280px;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+  }
+
+  /* ✅ Petit mobile <= 420px : sidebar centrée */
+  @media screen and (max-width: 425px) {
+    .contLogo {
+      width: 100px;
+      height: 60px;
+      top: 6px;
+      left: 10px;
+    }
+    .sidebar {
+      top: 72px;
+      height: calc(100% - 72px);
+      width: 90vw;
+      left: -100vw;
+      align-items: center;
+      padding: 20px 15px;
+    }
+    .sidebar.open {
+      left: 5vw;
+    }
+    .sidebar h3,
+    .sidebar p,
+    .sidebar label,
+    .sidebar input,
+    .sidebar select,
+    .agency-select,
+    #result-zone {
+      text-align: center;
+    }
+    .sidebar button.validate,
+    .sidebar button.reset,
+    .btnStyle {
+      margin: 0 auto 8px auto;
+    }
+    .sidebar > .btnMenuPerso {
+      margin: 0 auto 8px auto;
+    }
+  }
+  

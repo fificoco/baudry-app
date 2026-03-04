@@ -1,0 +1,472 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', sans-serif;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#map {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    cursor: pointer;
+}
+
+#map.leaflet-container.leaflet-dragging,
+#map.leaflet-container.leaflet-grabbing {
+    cursor: grabbing;
+}
+
+.app-header {
+    --logo-w: 126px;
+    --header-btn-size: 38px;
+    position: fixed;
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    z-index: 1205;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+}
+
+.logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: var(--logo-w);
+    margin-left: 0;
+}
+
+.logo {
+    width: var(--logo-w);
+    height: auto;
+}
+
+.burger-btn {
+    width: var(--header-btn-size);
+    height: var(--header-btn-size);
+    border-radius: 10px;
+    border: 1px solid rgba(31, 31, 31, 0.6);
+    background: #f7c600;
+    color: #111;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.burger-lines {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.burger-lines span {
+    display: block;
+    width: 18px;
+    height: 3px;
+    border-radius: 6px;
+    background: #111;
+}
+
+.top-right-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 0;
+}
+
+.account-btn {
+    width: var(--header-btn-size);
+    height: var(--header-btn-size);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(17, 17, 17, 0.45);
+    background: #f7c600;
+    text-decoration: none;
+    color: #111;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0;
+    opacity: 1;
+}
+
+.admin-a-btn {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -360px;
+    width: 330px;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 1100;
+    padding: 135px 18px 18px;
+    border-radius: 0 12px 12px 0;
+    background: transparent;
+    border-right: 0;
+    backdrop-filter: none;
+    direction: rtl;
+    transition: left 0.25s ease;
+}
+
+.sidebar-content {
+    direction: rtl;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(17, 17, 17, 0.55) transparent;
+}
+
+.sidebar-content > * {
+    direction: ltr;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(17, 17, 17, 0.55);
+    border-radius: 999px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(17, 17, 17, 0.72);
+}
+
+.sidebar.open {
+    left: 0;
+}
+
+.sidebar h3 {
+    font-size: 22px;
+    margin: 12px 0 14px;
+    color: #111;
+}
+
+.agency-select,
+.sidebar input {
+    width: 100%;
+    margin-bottom: 10px;
+    border: 1px solid rgba(200, 200, 200, 0.45);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.city-cp-row {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.city-cp-row input {
+    margin-bottom: 0;
+}
+
+#villeInput {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#cpInput {
+    flex: 0 0 34%;
+}
+
+.sidebar .narrow-field {
+    width: 66.6667%;
+}
+
+.agency-label {
+    width: 66.6667%;
+    display: block;
+    margin-left: 0;
+    margin-right: auto;
+    margin-bottom: 15px;
+    border: 1px solid rgba(17, 17, 17, 0.45);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    background: rgba(17, 17, 17, 0.8);
+    color: #fff;
+    text-decoration: underline;
+    text-decoration-color: #f7c600;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.agency-select {
+    background: transparent;
+    color: #111;
+    border: 0;
+}
+
+#result-zone {
+    margin-top: 6px;
+    font-weight: 700;
+    color: #111;
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid currentColor;
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+    min-height: 0;
+}
+
+#result-zone:empty {
+    display: none;
+}
+
+.resultZone-hors-zone {
+    color: #c0392b !important;
+}
+
+.resultZone-default {
+    color: #1e7a2e !important;
+}
+
+.validate,
+.reset,
+.btnStyle {
+    width: 40%;
+    min-height: 42px;
+    margin: 0 0 8px;
+    padding: 10px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.validate {
+    background: rgba(247, 198, 0, 0.8);
+    color: #111;
+    border: 1px solid rgba(17, 17, 17, 0.45);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.reset {
+    background: rgba(17, 17, 17, 0.8);
+    color: #fff;
+    border: 1px solid rgba(17, 17, 17, 0.45);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.btnStyle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(17, 17, 17, 0.45);
+    background: rgba(255, 255, 255, 0.8);
+    color: #111;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.btnStyle.admin-link {
+    background: rgba(17, 17, 17, 0.8);
+    color: #f7c600;
+}
+
+.btnStyle:hover,
+.validate:hover,
+.reset:hover,
+.account-btn:hover,
+.burger-btn:hover {
+    opacity: 0.88;
+}
+
+.coord-corrector,
+.nav-buttons {
+    width: 100%;
+}
+
+.coord-corrector .btnStyle,
+.nav-buttons .btnStyle {
+    display: block;
+}
+
+#addCityBtn {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.gps-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.gps-row .btnStyle {
+    width: 40%;
+}
+
+.action-row {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.action-row .validate,
+.action-row .reset {
+    margin: 0;
+}
+
+#correctionStatus {
+    min-height: 18px;
+    margin: 4px 0 10px;
+    font-size: 12px;
+    color: #222;
+}
+
+.leaflet-bottom.leaflet-right {
+    bottom: 10px;
+    right: 10px;
+    z-index: 1001;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 425px) {
+    .app-header {
+        --logo-w: 102px;
+        --header-btn-size: 34px;
+    }
+
+    .logo {
+        width: var(--logo-w);
+    }
+
+    .top-right-actions {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .account-btn {
+        width: var(--header-btn-size);
+        height: var(--header-btn-size);
+    }
+
+    .sidebar {
+        top: 84px;
+        width: 100vw;
+        left: -102vw;
+        height: calc(100% - 84px);
+        border-radius: 0;
+        border-right: 0;
+        padding: 20px 14px 20px;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .sidebar-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sidebar h3,
+    #result-zone,
+    #correctionStatus {
+        text-align: center;
+    }
+
+    .city-cp-row,
+    .gps-row,
+    .action-row,
+    .coord-corrector {
+        justify-content: center;
+    }
+
+    .validate,
+    .reset,
+    .btnStyle {
+        margin: 0 0 8px;
+        width: 46%;
+    }
+
+    .gps-row .btnStyle {
+        width: 46%;
+    }
+
+    #addCityBtn {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .nav-buttons {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 10px;
+    }
+
+    #websiteBtn,
+    #itineraireBtn,
+    #zoneBtn {
+        width: 46%;
+    }
+
+    #websiteBtn {
+        order: 1;
+    }
+
+    #itineraireBtn {
+        order: 2;
+    }
+
+    #zoneBtn {
+        order: 3;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    #cpInput {
+        flex-basis: 42%;
+    }
+
+    .agency-label {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+}
