@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agency;
 use App\Models\AppSetting;
 use App\Models\City;
+use App\Models\Department;
 use App\Models\DeliveryZone;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -21,10 +22,40 @@ class AdminController extends Controller
         'voyager' => 'Voyager',
     ];
 
-    public function index(): View
+    public function index(Request $request): View|RedirectResponse
     {
         $activeAgency = Agency::where('is_active', true)->orderBy('name')->first();
         $currentMapStyle = AppSetting::getValue('map_style', 'light');
+        $perPage = 25;
+        $cityEditId = $request->integer('city_edit');
+
+        if ($cityEditId) {
+            $cityToEdit = City::query()->select('id', 'name')->find($cityEditId);
+
+            if ($cityToEdit) {
+                $position = City::query()
+                    ->where(function ($query) use ($cityToEdit) {
+                        $query
+                            ->where('name', '<', $cityToEdit->name)
+                            ->orWhere(function ($nestedQuery) use ($cityToEdit) {
+                                $nestedQuery
+                                    ->where('name', $cityToEdit->name)
+                                    ->where('id', '<=', $cityToEdit->id);
+                            });
+                    })
+                    ->count();
+
+                $targetPage = max(1, (int) ceil($position / $perPage));
+                $currentPage = max(1, $request->integer('page', 1));
+
+                if ($currentPage !== $targetPage) {
+                    return redirect()->route('admin.index', [
+                        'page' => $targetPage,
+                        'city_edit' => $cityToEdit->id,
+                    ]);
+                }
+            }
+        }
 
         if (! array_key_exists($currentMapStyle, self::MAP_STYLE_OPTIONS)) {
             $currentMapStyle = 'light';
@@ -32,15 +63,53 @@ class AdminController extends Controller
 
         return view('admin.index', [
             'users'       => User::orderBy('name')->get(),
-            'cities'      => City::orderBy('name')->paginate(25),
+            'cities'      => City::orderBy('name')->orderBy('id')->paginate($perPage)->withQueryString(),
+            'departments' => Department::orderBy('code')->paginate(20, ['*'], 'departments_page')->withQueryString(),
             'agencies'    => Agency::with(['deliveryZones' => fn($q) => $q->orderBy('order_index')])->orderBy('name')->get(),
             'zones'       => DeliveryZone::when($activeAgency, fn($q) => $q->where('agency_id', $activeAgency->id))
                 ->orderBy('order_index')
                 ->get(),
+            'cityEditId' => $cityEditId,
             'activeAgency' => $activeAgency,
             'roles'       => ['admin', 'dispatcher', 'viewer'],
             'mapStyleOptions' => self::MAP_STYLE_OPTIONS,
             'currentMapStyle' => $currentMapStyle,
+        ]);
+    }
+
+    public function searchCities(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'min:1', 'max:255'],
+        ]);
+
+        $term = trim($validated['q']);
+
+        $cities = City::query()
+            ->where('is_active', true)
+            ->whereHas('department', fn($query) => $query->where('is_active', true))
+            ->where(function ($query) use ($term) {
+                $query
+                    ->where('name', 'like', "%{$term}%")
+                    ->orWhere('postal_code', 'like', "%{$term}%");
+            })
+            ->orderBy('name')
+            ->orderBy('id')
+            ->limit(15)
+            ->with('department:id,code,name,is_active')
+            ->get(['id', 'name', 'postal_code', 'department_id', 'lat', 'lng', 'is_active']);
+
+        return response()->json([
+            'data' => $cities->map(fn(City $city) => [
+                'id' => $city->id,
+                'name' => $city->name,
+                'postal_code' => $city->postal_code,
+                'department' => $city->department?->code,
+                'lat' => $city->lat,
+                'lng' => $city->lng,
+                'is_active' => (bool) $city->is_active,
+                'edit_url' => route('admin.index', ['city_edit' => $city->id]),
+            ])->values(),
         ]);
     }
 
@@ -60,13 +129,45 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255'],
             'postal_code' => ['required', 'string', 'max:10'],
-            'lat'         => ['nullable', 'numeric', 'between:-90,90'],
-            'lng'         => ['nullable', 'numeric', 'between:-180,180'],
+            'lat'         => ['required', 'numeric', 'between:-90,90'],
+            'lng'         => ['required', 'numeric', 'between:-180,180'],
             'is_active'   => ['nullable', 'boolean'],
         ]);
 
+        $normalizedName = trim((string) $validated['name']);
+        $normalizedPostalCode = trim((string) $validated['postal_code']);
+        $department = $this->resolveDepartmentFromPostalCode($normalizedPostalCode);
+
+        if (! $department) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Département introuvable à partir du code postal.',
+                ], 422);
+            }
+
+            return back()->with('error', 'Département introuvable à partir du code postal.');
+        }
+
+        $cityAlreadyExists = City::query()
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($normalizedName)])
+            ->whereRaw('LOWER(postal_code) = ?', [mb_strtolower($normalizedPostalCode)])
+            ->exists();
+
+        if ($cityAlreadyExists) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Cette ville existe déjà avec ce code postal.',
+                ], 422);
+            }
+
+            return back()->with('error', 'Cette ville existe déjà avec ce code postal.');
+        }
+
         $city = City::create([
             ...$validated,
+            'name' => $normalizedName,
+            'postal_code' => $normalizedPostalCode,
+            'department_id' => $department->id,
             'is_active' => (bool) ($validated['is_active'] ?? true),
         ]);
 
@@ -90,8 +191,29 @@ class AdminController extends Controller
             'is_active'   => ['nullable', 'boolean'],
         ]);
 
+        $normalizedName = trim((string) $validated['name']);
+        $normalizedPostalCode = trim((string) $validated['postal_code']);
+        $department = $this->resolveDepartmentFromPostalCode($normalizedPostalCode);
+
+        if (! $department) {
+            return back()->with('error', 'Département introuvable à partir du code postal.');
+        }
+
+        $cityAlreadyExists = City::query()
+            ->whereKeyNot($city->id)
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($normalizedName)])
+            ->whereRaw('LOWER(postal_code) = ?', [mb_strtolower($normalizedPostalCode)])
+            ->exists();
+
+        if ($cityAlreadyExists) {
+            return back()->with('error', 'Une autre ville existe déjà avec ce code postal.');
+        }
+
         $city->update([
             ...$validated,
+            'name' => $normalizedName,
+            'postal_code' => $normalizedPostalCode,
+            'department_id' => $department->id,
             'is_active' => (bool) ($validated['is_active'] ?? true),
         ]);
 
@@ -135,6 +257,19 @@ class AdminController extends Controller
         $city->delete();
 
         return back()->with('success', 'Ville supprimée.');
+    }
+
+    public function updateDepartment(Request $request, Department $department): RedirectResponse
+    {
+        $validated = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $department->update([
+            'is_active' => (bool) $validated['is_active'],
+        ]);
+
+        return back()->with('success', 'Département mis à jour.');
     }
 
     public function storeAgency(Request $request): RedirectResponse
@@ -308,5 +443,40 @@ class AdminController extends Controller
         $user->delete();
 
         return back()->with('success', 'Utilisateur supprimé.');
+    }
+
+    private function resolveDepartmentFromPostalCode(string $postalCode): ?Department
+    {
+        $departmentCode = $this->extractDepartmentCode($postalCode);
+
+        if (! $departmentCode) {
+            return null;
+        }
+
+        return Department::firstOrCreate(
+            ['code' => $departmentCode],
+            ['name' => 'Département '.$departmentCode, 'is_active' => true],
+        );
+    }
+
+    private function extractDepartmentCode(string $postalCode): ?string
+    {
+        $normalized = strtoupper(trim($postalCode));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        $normalized = preg_replace('/[^A-Z0-9]/', '', $normalized) ?? '';
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (preg_match('/^(97|98)\d{1,3}$/', $normalized) === 1) {
+            return substr($normalized, 0, 3);
+        }
+
+        return substr($normalized, 0, min(2, strlen($normalized)));
     }
 }

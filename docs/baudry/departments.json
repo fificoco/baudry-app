@@ -1,0 +1,532 @@
+[
+    {
+        "code": "01",
+        "name": "Ain",
+        "is_active": true
+    },
+    {
+        "code": "02",
+        "name": "Aisne",
+        "is_active": true
+    },
+    {
+        "code": "03",
+        "name": "Allier",
+        "is_active": true
+    },
+    {
+        "code": "04",
+        "name": "Alpes-de-Haute-Provence",
+        "is_active": true
+    },
+    {
+        "code": "05",
+        "name": "Hautes-Alpes",
+        "is_active": true
+    },
+    {
+        "code": "06",
+        "name": "Alpes-Maritimes",
+        "is_active": true
+    },
+    {
+        "code": "07",
+        "name": "Ardèche",
+        "is_active": true
+    },
+    {
+        "code": "08",
+        "name": "Ardennes",
+        "is_active": true
+    },
+    {
+        "code": "09",
+        "name": "Ariège",
+        "is_active": true
+    },
+    {
+        "code": 10,
+        "name": "Aube",
+        "is_active": true
+    },
+    {
+        "code": 11,
+        "name": "Aude",
+        "is_active": true
+    },
+    {
+        "code": 12,
+        "name": "Aveyron",
+        "is_active": true
+    },
+    {
+        "code": 13,
+        "name": "Bouches-du-Rhône",
+        "is_active": true
+    },
+    {
+        "code": 14,
+        "name": "Calvados",
+        "is_active": true
+    },
+    {
+        "code": 15,
+        "name": "Cantal",
+        "is_active": true
+    },
+    {
+        "code": 16,
+        "name": "Charente",
+        "is_active": true
+    },
+    {
+        "code": 17,
+        "name": "Charente-Maritime",
+        "is_active": true
+    },
+    {
+        "code": 18,
+        "name": "Cher",
+        "is_active": true
+    },
+    {
+        "code": 19,
+        "name": "Corrèze",
+        "is_active": true
+    },
+    {
+        "code": 20,
+        "name": "Corse",
+        "is_active": true
+    },
+    {
+        "code": 21,
+        "name": "Côte-d'Or",
+        "is_active": true
+    },
+    {
+        "code": 22,
+        "name": "Côtes-d'Armor",
+        "is_active": true
+    },
+    {
+        "code": 23,
+        "name": "Creuse",
+        "is_active": true
+    },
+    {
+        "code": 24,
+        "name": "Dordogne",
+        "is_active": true
+    },
+    {
+        "code": 25,
+        "name": "Doubs",
+        "is_active": true
+    },
+    {
+        "code": 26,
+        "name": "Drôme",
+        "is_active": true
+    },
+    {
+        "code": 27,
+        "name": "Eure",
+        "is_active": true
+    },
+    {
+        "code": 28,
+        "name": "Eure-et-Loir",
+        "is_active": true
+    },
+    {
+        "code": 29,
+        "name": "Finistère",
+        "is_active": true
+    },
+    {
+        "code": 30,
+        "name": "Gard",
+        "is_active": true
+    },
+    {
+        "code": 31,
+        "name": "Haute-Garonne",
+        "is_active": true
+    },
+    {
+        "code": 32,
+        "name": "Gers",
+        "is_active": true
+    },
+    {
+        "code": 33,
+        "name": "Gironde",
+        "is_active": true
+    },
+    {
+        "code": 34,
+        "name": "Hérault",
+        "is_active": true
+    },
+    {
+        "code": 35,
+        "name": "Ille-et-Vilaine",
+        "is_active": true
+    },
+    {
+        "code": 36,
+        "name": "Indre",
+        "is_active": true
+    },
+    {
+        "code": 37,
+        "name": "Indre-et-Loire",
+        "is_active": true
+    },
+    {
+        "code": 38,
+        "name": "Isère",
+        "is_active": true
+    },
+    {
+        "code": 39,
+        "name": "Jura",
+        "is_active": true
+    },
+    {
+        "code": 40,
+        "name": "Landes",
+        "is_active": true
+    },
+    {
+        "code": 41,
+        "name": "Loir-et-Cher",
+        "is_active": true
+    },
+    {
+        "code": 42,
+        "name": "Loire",
+        "is_active": true
+    },
+    {
+        "code": 43,
+        "name": "Haute-Loire",
+        "is_active": true
+    },
+    {
+        "code": 44,
+        "name": "Loire-Atlantique",
+        "is_active": true
+    },
+    {
+        "code": 45,
+        "name": "Loiret",
+        "is_active": true
+    },
+    {
+        "code": 46,
+        "name": "Lot",
+        "is_active": true
+    },
+    {
+        "code": 47,
+        "name": "Lot-et-Garonne",
+        "is_active": true
+    },
+    {
+        "code": 48,
+        "name": "Lozère",
+        "is_active": true
+    },
+    {
+        "code": 49,
+        "name": "Maine-et-Loire",
+        "is_active": true
+    },
+    {
+        "code": 50,
+        "name": "Manche",
+        "is_active": true
+    },
+    {
+        "code": 51,
+        "name": "Marne",
+        "is_active": true
+    },
+    {
+        "code": 52,
+        "name": "Haute-Marne",
+        "is_active": true
+    },
+    {
+        "code": 53,
+        "name": "Mayenne",
+        "is_active": true
+    },
+    {
+        "code": 54,
+        "name": "Meurthe-et-Moselle",
+        "is_active": true
+    },
+    {
+        "code": 55,
+        "name": "Meuse",
+        "is_active": true
+    },
+    {
+        "code": 56,
+        "name": "Morbihan",
+        "is_active": true
+    },
+    {
+        "code": 57,
+        "name": "Moselle",
+        "is_active": true
+    },
+    {
+        "code": 58,
+        "name": "Nièvre",
+        "is_active": true
+    },
+    {
+        "code": 59,
+        "name": "Nord",
+        "is_active": true
+    },
+    {
+        "code": 60,
+        "name": "Oise",
+        "is_active": true
+    },
+    {
+        "code": 61,
+        "name": "Orne",
+        "is_active": true
+    },
+    {
+        "code": 62,
+        "name": "Pas-de-Calais",
+        "is_active": true
+    },
+    {
+        "code": 63,
+        "name": "Puy-de-Dôme",
+        "is_active": true
+    },
+    {
+        "code": 64,
+        "name": "Pyrénées-Atlantiques",
+        "is_active": true
+    },
+    {
+        "code": 65,
+        "name": "Hautes-Pyrénées",
+        "is_active": true
+    },
+    {
+        "code": 66,
+        "name": "Pyrénées-Orientales",
+        "is_active": true
+    },
+    {
+        "code": 67,
+        "name": "Bas-Rhin",
+        "is_active": true
+    },
+    {
+        "code": 68,
+        "name": "Haut-Rhin",
+        "is_active": true
+    },
+    {
+        "code": 69,
+        "name": "Rhône",
+        "is_active": true
+    },
+    {
+        "code": 70,
+        "name": "Haute-Saône",
+        "is_active": true
+    },
+    {
+        "code": 71,
+        "name": "Saône-et-Loire",
+        "is_active": true
+    },
+    {
+        "code": 72,
+        "name": "Sarthe",
+        "is_active": true
+    },
+    {
+        "code": 73,
+        "name": "Savoie",
+        "is_active": true
+    },
+    {
+        "code": 74,
+        "name": "Haute-Savoie",
+        "is_active": true
+    },
+    {
+        "code": 75,
+        "name": "Paris",
+        "is_active": true
+    },
+    {
+        "code": 76,
+        "name": "Seine-Maritime",
+        "is_active": true
+    },
+    {
+        "code": 77,
+        "name": "Seine-et-Marne",
+        "is_active": true
+    },
+    {
+        "code": 78,
+        "name": "Yvelines",
+        "is_active": true
+    },
+    {
+        "code": 79,
+        "name": "Deux-Sèvres",
+        "is_active": true
+    },
+    {
+        "code": 80,
+        "name": "Somme",
+        "is_active": true
+    },
+    {
+        "code": 81,
+        "name": "Tarn",
+        "is_active": true
+    },
+    {
+        "code": 82,
+        "name": "Tarn-et-Garonne",
+        "is_active": true
+    },
+    {
+        "code": 83,
+        "name": "Var",
+        "is_active": true
+    },
+    {
+        "code": 84,
+        "name": "Vaucluse",
+        "is_active": true
+    },
+    {
+        "code": 85,
+        "name": "Vendée",
+        "is_active": true
+    },
+    {
+        "code": 86,
+        "name": "Vienne",
+        "is_active": true
+    },
+    {
+        "code": 87,
+        "name": "Haute-Vienne",
+        "is_active": true
+    },
+    {
+        "code": 88,
+        "name": "Vosges",
+        "is_active": true
+    },
+    {
+        "code": 89,
+        "name": "Yonne",
+        "is_active": true
+    },
+    {
+        "code": 90,
+        "name": "Territoire de Belfort",
+        "is_active": true
+    },
+    {
+        "code": 91,
+        "name": "Essonne",
+        "is_active": true
+    },
+    {
+        "code": 92,
+        "name": "Hauts-de-Seine",
+        "is_active": true
+    },
+    {
+        "code": 93,
+        "name": "Seine-Saint-Denis",
+        "is_active": true
+    },
+    {
+        "code": 94,
+        "name": "Val-de-Marne",
+        "is_active": true
+    },
+    {
+        "code": 95,
+        "name": "Val-d'Oise",
+        "is_active": true
+    },
+    {
+        "code": 971,
+        "name": "Guadeloupe",
+        "is_active": true
+    },
+    {
+        "code": 972,
+        "name": "Martinique",
+        "is_active": true
+    },
+    {
+        "code": 973,
+        "name": "Guyane",
+        "is_active": true
+    },
+    {
+        "code": 974,
+        "name": "La Réunion",
+        "is_active": true
+    },
+    {
+        "code": 976,
+        "name": "Mayotte",
+        "is_active": true
+    },
+    {
+        "code": 977,
+        "name": "Saint-Barthélemy",
+        "is_active": true
+    },
+    {
+        "code": 978,
+        "name": "Saint-Martin",
+        "is_active": true
+    },
+    {
+        "code": 984,
+        "name": "Terres australes et antarctiques françaises",
+        "is_active": true
+    },
+    {
+        "code": 986,
+        "name": "Wallis-et-Futuna",
+        "is_active": true
+    },
+    {
+        "code": 987,
+        "name": "Polynésie française",
+        "is_active": true
+    },
+    {
+        "code": 988,
+        "name": "Nouvelle-Calédonie",
+        "is_active": true
+    }
+]

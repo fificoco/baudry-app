@@ -14,18 +14,24 @@ const websiteBtn = document.getElementById('websiteBtn');
 const itineraireBtn = document.getElementById('itineraireBtn');
 const burgerBtn = document.getElementById('burgerBtn');
 const sidebar = document.getElementById('sidebar');
+const appHeader = document.querySelector('.app-header');
 
 const toggleCorrectionBtn = document.getElementById('toggleCorrectionBtn');
 const saveCorrectionBtn = document.getElementById('saveCorrectionBtn');
+const addCityBtn = document.getElementById('addCityBtn');
 
 let userMarker = null;
 let agenceMarker = null;
 let correctionPreviewMarker = null;
 let rings = [];
 let zonesActives = false;
+let zoneButtonAllVisible = false;
 let correctionMode = false;
+let addGpsMode = false;
+let addCityMode = false;
 let currentCity = null;
 let rayonAdresse = null;
+let statusClearTimer = null;
 
 const map = L.map('map', {
   zoomControl: false,
@@ -116,8 +122,116 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 function setStatus(message, isError = false) {
   if (!correctionStatus) return;
+  if (statusClearTimer) {
+    clearTimeout(statusClearTimer);
+    statusClearTimer = null;
+  }
+
   correctionStatus.textContent = message;
-  correctionStatus.style.color = isError ? '#c0392b' : '#222';
+  correctionStatus.classList.remove('status-error', 'status-success', 'status-info');
+
+  if (isError || /^⚠️|^❌/.test(message || '')) {
+    correctionStatus.classList.add('status-error');
+  } else if (/^✅/.test(message || '')) {
+    correctionStatus.classList.add('status-success');
+  } else if (/^✏️/.test(message || '')) {
+    correctionStatus.classList.add('status-info');
+  } else {
+    correctionStatus.classList.add('status-info');
+  }
+
+  statusClearTimer = window.setTimeout(() => {
+    correctionStatus.textContent = '';
+    correctionStatus.classList.remove('status-error', 'status-success', 'status-info');
+    statusClearTimer = null;
+  }, 3000);
+}
+
+function syncAddGpsButtonState() {
+  if (toggleCorrectionBtn) {
+    toggleCorrectionBtn.classList.toggle('gps-active', addGpsMode || addCityMode);
+  }
+
+  if (addCityBtn) {
+    addCityBtn.classList.toggle('gps-active', addCityMode);
+  }
+}
+
+function syncCorrectionModeState() {
+  correctionMode = addGpsMode || addCityMode;
+  map.getContainer().style.cursor = correctionMode ? 'crosshair' : '';
+  syncAddGpsButtonState();
+}
+
+async function createCityFromMarker() {
+  const { ville, code } = parseVilleCodeInputs();
+  if (!ville || !code) {
+    setStatus('⚠️ Ville + Postal obligatoires avant création.', true);
+    return;
+  }
+
+  const coords = correctionPreviewMarker
+    ? correctionPreviewMarker.getLatLng()
+    : userMarker
+      ? userMarker.getLatLng()
+      : null;
+
+  if (!coords) {
+    setStatus('⚠️ Place un repère sur la carte avant de valider.', true);
+    return;
+  }
+
+  let existingCity = null;
+  try {
+    existingCity = await findCityByInputs(ville, code);
+  } catch {
+    setStatus('❌ Erreur de vérification des doublons.', true);
+    return;
+  }
+
+  if (existingCity) {
+    setStatus('⚠️ Cette ville existe déjà avec ce code postal. Aucun doublon créé.', true);
+    return;
+  }
+
+  const response = await fetch(bootstrap.routes.cityStore, {
+    method: 'POST',
+    headers: csrfHeaders(),
+    body: JSON.stringify({
+      name: ville,
+      postal_code: code,
+      lat: coords.lat,
+      lng: coords.lng,
+      is_active: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    setStatus(`❌ ${payload?.message || 'Échec de création de la ville.'}`, true);
+    return;
+  }
+
+  const payload = await response.json();
+  currentCity = payload.data;
+
+  villeInput.value = currentCity.name;
+  cpInput.value = currentCity.postal_code;
+  setUserMarker(currentCity.lat, currentCity.lng, `${currentCity.name} (new)`);
+
+  const agency = selectedAgency();
+  rayonAdresse = getDistance(agency.center[0], agency.center[1], currentCity.lat, currentCity.lng);
+  updateZoneText(rayonAdresse);
+
+  if (correctionPreviewMarker) {
+    map.removeLayer(correctionPreviewMarker);
+    correctionPreviewMarker = null;
+  }
+
+  addCityMode = false;
+  addGpsMode = false;
+  syncCorrectionModeState();
+  setStatus(`✅ Nouvelle ville créée : ${currentCity.name} (${currentCity.postal_code}).`);
 }
 
 function updateAgenceMarker() {
@@ -183,6 +297,21 @@ function drawZones({ all = false, distance = null } = {}) {
   });
 }
 
+function focusAgencyAndAllZones() {
+  const agency = selectedAgency();
+  if (!agency) return;
+
+  if (rings.length > 0) {
+    const bounds = L.featureGroup(rings).getBounds();
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [32, 32] });
+      return;
+    }
+  }
+
+  map.setView(agency.center, 12);
+}
+
 function updateZoneText(distance) {
   const agency = selectedAgency();
   if (!agency) return;
@@ -190,6 +319,7 @@ function updateZoneText(distance) {
   const maxRmax = Math.max(...zones.map((z) => Number(z.rmax)), 0);
   const emojis = ['🟢', '🟡', '🟠', '🔴', '🟣', '🟤', '⚫'];
 
+  zoneButtonAllVisible = false;
   zonesActives = true;
 
   if (distance > maxRmax) {
@@ -212,6 +342,38 @@ function updateZoneText(distance) {
   }
 
   drawZones({ all: false, distance });
+}
+
+function getZoneShortLabel(distance) {
+  const agency = selectedAgency();
+  if (!agency || distance === null || distance === undefined) return '';
+
+  const zones = [...agency.zones].sort((a, b) => Number(a.rmin) - Number(b.rmin));
+  const maxRmax = Math.max(...zones.map((z) => Number(z.rmax)), 0);
+
+  if (distance > maxRmax) {
+    return 'Hors zone';
+  }
+
+  for (let i = 0; i < zones.length; i += 1) {
+    if (distance <= Number(zones[i].rmax)) {
+      return `Zone (${i + 1})`;
+    }
+  }
+
+  return '';
+}
+
+function syncUserMarkerPopupWithZone(baseLabel) {
+  if (!userMarker) return;
+
+  const zoneLabel = getZoneShortLabel(rayonAdresse);
+  if (!zoneLabel) {
+    userMarker.setPopupContent(baseLabel).openPopup();
+    return;
+  }
+
+  userMarker.setPopupContent(`${baseLabel}<br>${zoneLabel}`).openPopup();
 }
 
 function parseVilleCodeInputs() {
@@ -260,6 +422,9 @@ function setUserMarker(lat, lng, popup) {
       iconSize: [32, 32],
     }),
   }).addTo(map).bindPopup(popup).openPopup();
+
+  const targetZoom = 12;
+  map.setView([lat, lng], targetZoom, { animate: true });
 }
 
 function csrfHeaders() {
@@ -300,6 +465,8 @@ async function validateSearch() {
       setUserMarker(lat, lng, `Destination : ${fullAddress}`);
       rayonAdresse = getDistance(agency.center[0], agency.center[1], lat, lng);
       updateZoneText(rayonAdresse);
+      syncUserMarkerPopupWithZone(`Destination : ${fullAddress}`);
+      closeSidebarAfterValidationOnMobile();
       return;
     }
 
@@ -317,6 +484,8 @@ async function validateSearch() {
     setUserMarker(city.lat, city.lng, city.name);
     rayonAdresse = getDistance(agency.center[0], agency.center[1], city.lat, city.lng);
     updateZoneText(rayonAdresse);
+    syncUserMarkerPopupWithZone(city.name);
+    closeSidebarAfterValidationOnMobile();
   } catch {
     resultZone.className = 'resultZone-hors-zone';
     resultZone.textContent = '❌ Erreur de recherche.';
@@ -324,19 +493,55 @@ async function validateSearch() {
 }
 
 if (toggleCorrectionBtn) {
-  toggleCorrectionBtn.addEventListener('click', () => {
-    correctionMode = !correctionMode;
-    map.getContainer().style.cursor = correctionMode ? 'crosshair' : '';
-    setStatus(correctionMode
-      ? '🛠️ GPS Ajusté activé : clique sur la carte puis GPS Update.'
-      : 'Mode GPS Ajusté désactivé.');
+  toggleCorrectionBtn.addEventListener('click', async () => {
+    const { ville, code } = parseVilleCodeInputs();
+    if (!ville || !code) {
+      setStatus('⚠️ Renseigne d\'abord Ville + Postal.', true);
+      return;
+    }
+
+    try {
+      const city = await findCityByInputs(ville, code);
+      currentCity = city || null;
+    } catch {
+      setStatus('⚠️ Impossible de vérifier la ville pour le moment.', true);
+      return;
+    }
+
+    addCityMode = false;
+    addGpsMode = !addGpsMode;
+    syncCorrectionModeState();
+    setStatus(addGpsMode
+      ? (currentCity
+        ? `✏️ Ville existante détectée (${currentCity.name}) : place le repère puis Save-GPS.`
+        : '➕ Nouvelle ville : place le repère puis Save-GPS.')
+      : 'Mode Add-GPS désactivé.');
+  });
+}
+
+if (addCityBtn) {
+  addCityBtn.addEventListener('click', () => {
+    addCityMode = !addCityMode;
+
+    if (addCityMode) {
+      currentCity = null;
+      addGpsMode = true;
+      syncCorrectionModeState();
+      setStatus('➕ Mode Add-City activé : saisis Ville + Postal, place un repère, puis Valider.');
+      return;
+    }
+
+    addGpsMode = false;
+    syncCorrectionModeState();
+    setStatus('Mode Add-City désactivé.');
   });
 }
 
 if (saveCorrectionBtn) {
   saveCorrectionBtn.addEventListener('click', async () => {
-    if (!currentCity) {
-      setStatus('⚠️ Fais d’abord une recherche de ville valide.', true);
+    const { ville, code } = parseVilleCodeInputs();
+    if (!ville || !code) {
+      setStatus('⚠️ Ville + Postal obligatoires avant Save-GPS.', true);
       return;
     }
 
@@ -347,20 +552,80 @@ if (saveCorrectionBtn) {
         : null;
 
     if (!coords) {
-      setStatus('⚠️ Choisis un point GPS sur la carte avant update.', true);
+      setStatus('⚠️ Place un repère sur la carte avant Save-GPS.', true);
       return;
     }
 
-    const url = bootstrap.routes.cityCoordinatesTemplate.replace('__CITY__', currentCity.id);
+    let existingCityFromInputs = null;
+    try {
+      existingCityFromInputs = await findCityByInputs(ville, code);
+    } catch {
+      setStatus('❌ Erreur de vérification des doublons.', true);
+      return;
+    }
 
-    const response = await fetch(url, {
-      method: 'PATCH',
+    const shouldUpdateExisting = Boolean(
+      currentCity
+      && existingCityFromInputs
+      && Number(existingCityFromInputs.id) === Number(currentCity.id),
+    );
+
+    if (!shouldUpdateExisting && existingCityFromInputs) {
+      currentCity = existingCityFromInputs;
+      villeInput.value = existingCityFromInputs.name;
+      cpInput.value = existingCityFromInputs.postal_code;
+      setUserMarker(existingCityFromInputs.lat, existingCityFromInputs.lng, `${existingCityFromInputs.name} (existe déjà)`);
+      setStatus('⚠️ Cette ville existe déjà avec ce code postal. Aucun doublon créé.', true);
+      return;
+    }
+
+    if (shouldUpdateExisting) {
+      const url = bootstrap.routes.cityCoordinatesTemplate.replace('__CITY__', currentCity.id);
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: csrfHeaders(),
+        body: JSON.stringify({ lat: coords.lat, lng: coords.lng, reason: 'Save map admin' }),
+      });
+
+      if (!response.ok) {
+        setStatus('❌ Échec de la sauvegarde GPS.', true);
+        return;
+      }
+
+      const payload = await response.json();
+      currentCity = payload.data;
+
+      villeInput.value = currentCity.name;
+      cpInput.value = currentCity.postal_code;
+      setUserMarker(currentCity.lat, currentCity.lng, `${currentCity.name} (saved)`);
+
+      const agency = selectedAgency();
+      rayonAdresse = getDistance(agency.center[0], agency.center[1], currentCity.lat, currentCity.lng);
+      updateZoneText(rayonAdresse);
+
+      addCityMode = false;
+      addGpsMode = false;
+      syncCorrectionModeState();
+      setStatus(`✅ Ville mise à jour : ${currentCity.name}.`);
+      return;
+    }
+
+    const response = await fetch(bootstrap.routes.cityStore, {
+      method: 'POST',
       headers: csrfHeaders(),
-      body: JSON.stringify({ lat: coords.lat, lng: coords.lng, reason: 'Update map admin' }),
+      body: JSON.stringify({
+        name: ville,
+        postal_code: code,
+        lat: coords.lat,
+        lng: coords.lng,
+        is_active: true,
+      }),
     });
 
     if (!response.ok) {
-      setStatus('❌ Échec de la mise à jour GPS.', true);
+      const payload = await response.json().catch(() => null);
+      setStatus(`❌ ${payload?.message || 'Échec de création de la ville.'}`, true);
       return;
     }
 
@@ -369,15 +634,16 @@ if (saveCorrectionBtn) {
 
     villeInput.value = currentCity.name;
     cpInput.value = currentCity.postal_code;
-    setUserMarker(currentCity.lat, currentCity.lng, `${currentCity.name} (updated)`);
+    setUserMarker(currentCity.lat, currentCity.lng, `${currentCity.name} (new)`);
 
     const agency = selectedAgency();
     rayonAdresse = getDistance(agency.center[0], agency.center[1], currentCity.lat, currentCity.lng);
     updateZoneText(rayonAdresse);
 
-    correctionMode = false;
-    map.getContainer().style.cursor = '';
-    setStatus(`✅ GPS mis à jour pour ${currentCity.name}.`);
+    addCityMode = false;
+    addGpsMode = false;
+    syncCorrectionModeState();
+    setStatus(`✅ Nouvelle ville créée : ${currentCity.name} (${currentCity.postal_code}).`);
   });
 }
 
@@ -393,10 +659,16 @@ map.on('click', (event) => {
     }),
   }).addTo(map).bindPopup(`Nouveau point: ${event.latlng.lat.toFixed(6)}, ${event.latlng.lng.toFixed(6)}`).openPopup();
 
-  setStatus(`📍 Point choisi: ${event.latlng.lat.toFixed(6)}, ${event.latlng.lng.toFixed(6)}.`);
 });
 
-validerBtn.addEventListener('click', validateSearch);
+validerBtn.addEventListener('click', async () => {
+  if (addCityMode) {
+    await createCityFromMarker();
+    return;
+  }
+
+  await validateSearch();
+});
 resetBtn.addEventListener('click', () => {
   villeInput.value = '';
   cpInput.value = '';
@@ -414,10 +686,13 @@ resetBtn.addEventListener('click', () => {
   }
 
   currentCity = null;
+  rayonAdresse = null;
 
-  correctionMode = false;
-  map.getContainer().style.cursor = '';
+  addCityMode = false;
+  addGpsMode = false;
+  syncCorrectionModeState();
 
+  zoneButtonAllVisible = false;
   zonesActives = false;
   clearZones();
   updateAgenceMarker();
@@ -426,17 +701,20 @@ resetBtn.addEventListener('click', () => {
 
 zoneBtn.addEventListener('click', () => {
   if (!bootstrap.hasActiveAgency) return;
-  zonesActives = !zonesActives;
-  if (!zonesActives) {
+  zoneButtonAllVisible = !zoneButtonAllVisible;
+
+  if (!zoneButtonAllVisible) {
+    zonesActives = false;
     clearZones();
+    if (!userMarker) {
+      updateAgenceMarker();
+    }
     return;
   }
 
-  if (rayonAdresse !== null) {
-    drawZones({ all: false, distance: rayonAdresse });
-  } else {
-    drawZones({ all: true, distance: null });
-  }
+  zonesActives = true;
+  drawZones({ all: true, distance: null });
+  focusAgencyAndAllZones();
 });
 
 websiteBtn.addEventListener('click', () => {
@@ -463,13 +741,41 @@ if (agencySelect) {
   });
 }
 
+function syncMobileSidebarOffset() {
+  if (!appHeader) return;
+
+  if (window.innerWidth <= 500) {
+    const headerBottom = Math.ceil(appHeader.getBoundingClientRect().bottom);
+    const offset = Math.max(headerBottom + 8, 120);
+    document.documentElement.style.setProperty('--mobile-header-offset', `${offset}px`);
+    return;
+  }
+
+  document.documentElement.style.removeProperty('--mobile-header-offset');
+}
+
+function closeSidebarAfterValidationOnMobile() {
+  if (window.innerWidth > 500) return;
+  if (!sidebar) return;
+  sidebar.classList.remove('open');
+
+  window.setTimeout(() => {
+    map.invalidateSize();
+    if (!userMarker) return;
+    map.setView(userMarker.getLatLng(), map.getZoom(), { animate: true });
+  }, 160);
+}
+
 burgerBtn.addEventListener('click', () => {
+  syncMobileSidebarOffset();
   sidebar.classList.toggle('open');
 });
 
 let villeTimer = null;
 const villeDatalist = document.getElementById('suggestions-ville');
 const cpDatalist = document.getElementById('suggestions-cp');
+let villeSuggestionRequestId = 0;
+let cpSuggestionRequestId = 0;
 
 function showInputSuggestions(input, listId) {
   input.setAttribute('list', listId);
@@ -482,35 +788,53 @@ function hideInputSuggestions(input, datalist) {
 
 async function loadVilleSuggestions() {
   if (!villeDatalist) return;
+  const requestId = ++villeSuggestionRequestId;
   villeDatalist.innerHTML = '';
   if (!villeInput.value.trim()) return;
 
   try {
     const cities = await searchCities(villeInput.value.trim(), '');
+    if (requestId !== villeSuggestionRequestId) return;
+
+    const seen = new Set();
     cities.slice(0, 15).forEach((city) => {
+      const label = `${city.name} (${city.postal_code})`;
+      if (seen.has(label)) return;
+      seen.add(label);
       const option = document.createElement('option');
-      option.value = `${city.name} (${city.postal_code})`;
+      option.value = label;
       villeDatalist.appendChild(option);
     });
   } catch {
-    villeDatalist.innerHTML = '';
+    if (requestId === villeSuggestionRequestId) {
+      villeDatalist.innerHTML = '';
+    }
   }
 }
 
 async function loadCpSuggestions() {
   if (!cpDatalist) return;
+  const requestId = ++cpSuggestionRequestId;
   cpDatalist.innerHTML = '';
   if (!cpInput.value.trim()) return;
 
   try {
     const cities = await searchCities('', cpInput.value.trim());
+    if (requestId !== cpSuggestionRequestId) return;
+
+    const seen = new Set();
     cities.slice(0, 15).forEach((city) => {
+      const label = `${city.postal_code} - ${city.name}`;
+      if (seen.has(label)) return;
+      seen.add(label);
       const option = document.createElement('option');
-      option.value = `${city.postal_code} - ${city.name}`;
+      option.value = label;
       cpDatalist.appendChild(option);
     });
   } catch {
-    cpDatalist.innerHTML = '';
+    if (requestId === cpSuggestionRequestId) {
+      cpDatalist.innerHTML = '';
+    }
   }
 }
 
@@ -574,6 +898,9 @@ cpInput.addEventListener('blur', () => {
 });
 
 window.addEventListener('load', () => {
+  syncMobileSidebarOffset();
+  syncCorrectionModeState();
+
   if (bootstrap.hasActiveAgency) {
     updateAgenceMarker();
   } else {
@@ -584,4 +911,7 @@ window.addEventListener('load', () => {
   setTimeout(() => map.invalidateSize(), 180);
 });
 
-window.addEventListener('resize', () => map.invalidateSize());
+window.addEventListener('resize', () => {
+  syncMobileSidebarOffset();
+  map.invalidateSize();
+});

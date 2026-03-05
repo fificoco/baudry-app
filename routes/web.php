@@ -26,10 +26,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/', [AdminController::class, 'index'])->name('index');
     Route::patch('/map-style', [AdminController::class, 'updateMapStyle'])->name('map-style.update');
 
+    Route::get('/cities/search', [AdminController::class, 'searchCities'])->name('cities.search');
     Route::post('/cities', [AdminController::class, 'storeCity'])->name('cities.store');
     Route::patch('/cities/{city}', [AdminController::class, 'updateCity'])->name('cities.update');
     Route::patch('/cities/{city}/coordinates', [AdminController::class, 'updateCityCoordinates'])->name('cities.coordinates');
     Route::delete('/cities/{city}', [AdminController::class, 'destroyCity'])->name('cities.destroy');
+
+    Route::patch('/departments/{department}', [AdminController::class, 'updateDepartment'])->name('departments.update');
 
     Route::post('/agencies', [AdminController::class, 'storeAgency'])->name('agencies.store');
     Route::patch('/agencies/{agency}', [AdminController::class, 'updateAgency'])->name('agencies.update');

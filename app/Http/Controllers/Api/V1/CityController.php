@@ -19,7 +19,9 @@ class CityController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = City::query()->where('is_active', true);
+        $query = City::query()
+            ->where('is_active', true)
+            ->whereHas('department', fn($departmentQuery) => $departmentQuery->where('is_active', true));
 
         if ($search = $request->input('search')) {
             $query->where('name', 'like', "%{$search}%");
@@ -30,6 +32,7 @@ class CityController extends Controller
         }
 
         $cities = $query
+            ->with('department:id,code,name,is_active')
             ->orderBy('name')
             ->paginate($request->integer('per_page', 50));
 
@@ -42,6 +45,7 @@ class CityController extends Controller
      */
     public function show(City $city): CityResource
     {
+        $city->loadMissing('department:id,code,name,is_active');
         return new CityResource($city);
     }
 
@@ -68,7 +72,7 @@ class CityController extends Controller
             'lng' => $request->input('lng'),
         ]);
 
-        return new CityResource($city->fresh());
+        return new CityResource($city->fresh()->load('department:id,code,name,is_active'));
     }
 
     /**

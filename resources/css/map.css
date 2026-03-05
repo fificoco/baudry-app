@@ -27,17 +27,17 @@ body {
 }
 
 .app-header {
-    --logo-w: 126px;
+    --logo-w: 145px;
     --header-btn-size: 38px;
     position: fixed;
     top: 12px;
     left: 14px;
-    right: 14px;
+    right: auto;
     z-index: 1205;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
     gap: 0;
 }
 
@@ -52,19 +52,21 @@ body {
 .logo {
     width: var(--logo-w);
     height: auto;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.28));
 }
 
 .burger-btn {
     width: var(--header-btn-size);
     height: var(--header-btn-size);
     border-radius: 10px;
-    border: 1px solid rgba(31, 31, 31, 0.6);
-    background: #f7c600;
+    border: 1px solid rgba(17, 17, 17, 0.45);
+    background: rgba(247, 198, 0, 0.9);
     color: #111;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     opacity: 1;
 }
 
@@ -82,11 +84,25 @@ body {
     background: #111;
 }
 
-.top-right-actions {
+.header-actions {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
     gap: 10px;
-    margin-top: 0;
+    max-height: calc(100vh - 24px);
+}
+
+.header-actions form {
+    margin: 0;
+}
+
+.header-shortcut-btn {
+    width: var(--header-btn-size);
+    min-width: var(--header-btn-size);
+    height: var(--header-btn-size);
+    padding: 0;
 }
 
 .account-btn {
@@ -97,13 +113,14 @@ body {
     align-items: center;
     justify-content: center;
     border: 1px solid rgba(17, 17, 17, 0.45);
-    background: #f7c600;
+    background: rgba(247, 198, 0, 0.9);
     text-decoration: none;
     color: #111;
     cursor: pointer;
     font-size: 12px;
     font-weight: 700;
     padding: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     opacity: 1;
 }
 
@@ -115,18 +132,19 @@ body {
 .sidebar {
     position: fixed;
     top: 0;
-    left: -360px;
+    right: -360px;
+    left: auto;
     width: 330px;
     height: 100vh;
     overflow: hidden;
     z-index: 1100;
-    padding: 135px 18px 18px;
-    border-radius: 0 12px 12px 0;
+    padding: 18px 18px 18px;
+    border-radius: 12px 0 0 12px;
     background: transparent;
-    border-right: 0;
+    border-left: 0;
     backdrop-filter: none;
     direction: rtl;
-    transition: left 0.25s ease;
+    transition: right 0.25s ease;
 }
 
 .sidebar-content {
@@ -161,7 +179,7 @@ body {
 }
 
 .sidebar.open {
-    left: 0;
+    right: 0;
 }
 
 .sidebar h3 {
@@ -207,7 +225,7 @@ body {
 }
 
 .agency-label {
-    width: 66.6667%;
+    width: 100%;
     display: block;
     margin-left: 0;
     margin-right: auto;
@@ -217,7 +235,7 @@ body {
     padding: 8px 10px;
     font-size: 14px;
     font-weight: 700;
-    text-align: left;
+    text-align: center;
     background: rgba(17, 17, 17, 0.8);
     color: #fff;
     text-decoration: underline;
@@ -231,6 +249,36 @@ body {
     background: transparent;
     color: #111;
     border: 0;
+}
+
+@media (min-width: 501px) {
+    .header-actions {
+        margin-top: 10px;
+    }
+
+    .sidebar-content {
+        margin-top: 15px;
+    }
+
+    .city-cp-row {
+        justify-content: flex-end;
+    }
+
+    .action-row,
+    .gps-row,
+    .nav-buttons {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .action-row .validate,
+    .action-row .reset,
+    .gps-row .btnStyle,
+    .nav-buttons .btnStyle {
+        width: 35%;
+        margin: 0 0 0 auto;
+    }
 }
 
 #result-zone {
@@ -300,6 +348,23 @@ body {
     color: #f7c600;
 }
 
+@keyframes gps-border-blink {
+    0%,
+    100% {
+        border-color: rgba(220, 38, 38, 0.95);
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55), 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    50% {
+        border-color: rgba(220, 38, 38, 0.45);
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25), 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+}
+
+.gps-row .btnStyle.gps-active {
+    border-color: rgba(220, 38, 38, 0.95);
+    animation: gps-border-blink 0.9s ease-in-out infinite;
+}
+
 .btnStyle:hover,
 .validate:hover,
 .reset:hover,
@@ -330,7 +395,7 @@ body {
 }
 
 .gps-row .btnStyle {
-    width: 40%;
+    width: 35%;
 }
 
 .action-row {
@@ -346,10 +411,34 @@ body {
 }
 
 #correctionStatus {
-    min-height: 18px;
-    margin: 4px 0 10px;
+    min-height: 0;
+    margin: 6px 0 10px;
+    padding: 8px 10px;
     font-size: 12px;
-    color: #222;
+    color: #111;
+    background: #fff;
+    border: 2px solid #111;
+    border-radius: 8px;
+    text-align: center;
+}
+
+#correctionStatus:empty {
+    display: none;
+}
+
+#correctionStatus.status-error {
+    color: #c0392b;
+    border-color: #c0392b;
+}
+
+#correctionStatus.status-success {
+    color: #1e7a2e;
+    border-color: #1e7a2e;
+}
+
+#correctionStatus.status-info {
+    color: #111;
+    border-color: #111;
 }
 
 .leaflet-bottom.leaflet-right {
@@ -362,20 +451,42 @@ body {
     display: none;
 }
 
-@media (max-width: 425px) {
+@media (max-width: 500px) {
     .app-header {
-        --logo-w: 102px;
-        --header-btn-size: 34px;
+        left: 10px;
+        right: 10px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
     }
 
     .logo {
         width: var(--logo-w);
     }
 
-    .top-right-actions {
+    .logo-wrap {
+        order: 1;
+        justify-content: center;
+        width: auto;
+    }
+
+    .header-actions {
+        order: 2;
+        width: 100%;
+        display: flex;
         flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
         align-items: center;
+        align-content: flex-start;
         gap: 10px;
+        max-height: none;
+    }
+
+    .header-actions form {
+        display: block;
+        margin: 0;
     }
 
     .account-btn {
@@ -384,16 +495,19 @@ body {
     }
 
     .sidebar {
-        top: 84px;
+        top: var(--mobile-header-offset, 150px);
         width: 100vw;
+        right: auto;
         left: -102vw;
-        height: calc(100% - 84px);
+        height: calc(100% - var(--mobile-header-offset, 150px));
         border-radius: 0;
+        border-left: 0;
         border-right: 0;
         padding: 20px 14px 20px;
     }
 
     .sidebar.open {
+        right: auto;
         left: 0;
     }
 
@@ -420,11 +534,11 @@ body {
     .reset,
     .btnStyle {
         margin: 0 0 8px;
-        width: 46%;
+        width: calc((100% - 20px) / 3);
     }
 
     .gps-row .btnStyle {
-        width: 46%;
+        width: calc((100% - 20px) / 3);
     }
 
     #addCityBtn {
@@ -433,9 +547,9 @@ body {
     }
 
     .nav-buttons {
-        width: 100%;
+        width: auto;
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
         gap: 8px 10px;
     }
@@ -443,21 +557,11 @@ body {
     #websiteBtn,
     #itineraireBtn,
     #zoneBtn {
-        width: 46%;
-    }
-
-    #websiteBtn {
-        order: 1;
-    }
-
-    #itineraireBtn {
-        order: 2;
-    }
-
-    #zoneBtn {
-        order: 3;
-        margin-left: auto;
-        margin-right: auto;
+        width: var(--header-btn-size);
+        min-width: var(--header-btn-size);
+        height: var(--header-btn-size);
+        flex: 0 0 var(--header-btn-size);
+        margin: 0;
     }
 
     #cpInput {

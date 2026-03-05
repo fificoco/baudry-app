@@ -76,7 +76,7 @@ window.addEventListener('resize', () => { map.invalidateSize(); });
 // ================================================================================
 // charge des données de villes/codes postaux/geocodage
 // ================================================================================
-fetch('villes.json')
+fetch('geoData.json')
   .then(res => res.json())
   .then(data => {
     citiesData = data;
@@ -164,7 +164,7 @@ function exportUpdatedCitiesJson() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'villes.json';
+  anchor.download = 'geoData.json';
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -182,7 +182,7 @@ async function saveUpdatedCitiesJsonDirect() {
 
   const payload = JSON.stringify(citiesData, null, 2);
   const handle = await window.showSaveFilePicker({
-    suggestedName: 'villes.json',
+    suggestedName: 'geoData.json',
     types: [
       {
         description: 'Fichier JSON',

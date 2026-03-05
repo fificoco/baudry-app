@@ -23,7 +23,7 @@
                 <div class="absolute inset-0 bg-black/35"></div>
             @endif
 
-            <div class="w-full mt-6 overflow-hidden sm:rounded-lg {{ request()->routeIs('login') ? 'sm:max-w-[34rem] px-8 py-6 relative z-10 bg-white border-2 border-black shadow-2xl' : 'sm:max-w-md px-6 py-4 bg-white shadow-md' }}">
+            <div class="w-full mt-6 overflow-hidden sm:rounded-lg {{ request()->routeIs('login') ? 'max-[500px]:w-[92%] max-[500px]:mx-auto sm:max-w-[34rem] px-8 max-[500px]:px-5 py-6 relative z-10 bg-white border-2 border-black shadow-2xl' : 'sm:max-w-md px-6 py-4 bg-white shadow-md' }}">
                 {{ $slot }}
             </div>
         </div>

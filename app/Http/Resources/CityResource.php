@@ -13,6 +13,12 @@ class CityResource extends JsonResource
             'id'          => $this->id,
             'name'        => $this->name,
             'postal_code' => $this->postal_code,
+            'department'  => $this->department ? [
+                'id' => $this->department->id,
+                'code' => $this->department->code,
+                'name' => $this->department->name,
+                'is_active' => (bool) $this->department->is_active,
+            ] : null,
             'lat'         => $this->lat,
             'lng'         => $this->lng,
             'is_active'   => $this->is_active,

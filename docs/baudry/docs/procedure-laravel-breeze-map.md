@@ -202,7 +202,8 @@ php artisan migrate
 - ajouter rôle (admin, dispatcher, viewer)
 
 ## 7.2 Index utiles
-- `cities(postal_code, name)`
+- `cities(postal_code, name)` (index de recherche)
+- `cities(name, postal_code)` **UNIQUE** (anti-doublon)
 - `delivery_zones(agency_id, order_index)`
 - `city_coordinate_corrections(city_id, created_at)`
 
@@ -371,12 +372,14 @@ Commencer avec **Méthode A** puis passer à C seulement si besoin métier réel
 
 ## 15) Stratégie de migration depuis l’app actuelle
 
-1. Importer `villes.json` vers table `cities`.
-2. Vérifier doublons ville/code.
+1. Importer `geoData.json` vers table `cities`.
+2. Contrôle doublons: la contrainte unique `cities(name, postal_code)` bloque automatiquement les doublons.
 3. Migrer agences/zones actuelles.
 4. Basculer front vers API lecture.
 5. Basculer GPS Update vers API patch.
 6. Supprimer dépendance `localStorage`/JSON comme source de vérité.
+
+Note pratique: en relance complète d’import, utiliser `php artisan cities:import --fresh`.
 
 ---
 
@@ -387,6 +390,24 @@ php artisan serve
 npm run dev
 php artisan migrate:fresh --seed
 php artisan test
+```
+
+---
+
+## 16.1) Commandes d'import officielles
+
+Ordre d'exécution recommandé:
+
+```bash
+php artisan departments:import
+php artisan cities:import
+```
+
+Relance complète propre:
+
+```bash
+php artisan departments:import
+php artisan cities:import --fresh
 ```
 
 ---
