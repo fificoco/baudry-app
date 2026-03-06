@@ -319,10 +319,6 @@ body {
     .header-actions {
         order: 2;
         margin-top: 0;
-        position: fixed;
-        left: 14px;
-        top: 33.3333%;
-        transform: translateY(-33.3333%);
     }
 
     .sidebar {
@@ -486,12 +482,9 @@ body {
 #resetBtn,
 #addCityBtn,
 #toggleCorrectionBtn {
-    width: 79px;
-    min-width: 79px;
-    max-width: 79px;
-    min-height: 38px;
-    padding-top: 9px;
-    padding-bottom: 9px;
+    width: 88px;
+    min-width: 88px;
+    max-width: 88px;
 }
 
 .action-row {
@@ -641,7 +634,7 @@ body {
         margin-left: auto;
         margin-right: auto;
         display: grid;
-        grid-template-columns: repeat(2, 79px);
+        grid-template-columns: repeat(2, 88px);
         justify-content: center;
         align-items: center;
         gap: 8px;
@@ -655,9 +648,9 @@ body {
     }
 
     .gps-row .btnStyle {
-        width: 79px;
-        min-width: 79px;
-        max-width: 79px;
+        width: 88px;
+        min-width: 88px;
+        max-width: 88px;
         margin: 0 0 8px;
     }
 
