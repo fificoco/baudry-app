@@ -1,4 +1,9 @@
-const bootstrap = window.__MAP_BOOTSTRAP || { isAdmin: false, hasActiveAgency: false, routes: {} };
+const bootstrap = window.__MAP_BOOTSTRAP || {
+  isAdmin: false,
+  canManageCities: false,
+  hasActiveAgency: false,
+  routes: {},
+};
 
 const agencySelect = document.getElementById('agency');
 const villeInput = document.getElementById('villeInput');
@@ -855,7 +860,7 @@ async function saveGpsFromMarker() {
 }
 
 map.on('click', (event) => {
-  if (!correctionMode || !bootstrap.isAdmin) return;
+  if (!correctionMode || !bootstrap.canManageCities) return;
 
   if (correctionPreviewMarker) map.removeLayer(correctionPreviewMarker);
 

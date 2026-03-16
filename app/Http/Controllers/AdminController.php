@@ -15,6 +15,20 @@ use Illuminate\View\View;
 
 class AdminController extends Controller
 {
+    private const ROLE_OPTIONS = ['viewer', 'dispatcher', 'admin'];
+
+    private const ROLE_LABELS = [
+        'viewer' => 'Basic',
+        'dispatcher' => 'Superieur',
+        'admin' => 'Administrateur',
+    ];
+
+    private const ROLE_SHORT_LABELS = [
+        'viewer' => 'basic',
+        'dispatcher' => 'super',
+        'admin' => 'admin',
+    ];
+
     private const MAP_STYLE_OPTIONS = [
         'light' => 'Clair (CARTO Light)',
         'dark' => 'Sombre (CARTO Dark)',
@@ -82,7 +96,9 @@ class AdminController extends Controller
                 ->get(),
             'cityEditId' => $cityEditId,
             'activeAgency' => $activeAgency,
-            'roles'       => ['admin', 'dispatcher', 'viewer'],
+            'roles'       => self::ROLE_OPTIONS,
+            'roleLabels'  => self::ROLE_LABELS,
+            'roleShortLabels' => self::ROLE_SHORT_LABELS,
             'mapStyleOptions' => self::MAP_STYLE_OPTIONS,
             'currentMapStyle' => $currentMapStyle,
             'currentMapZooms' => $currentMapZooms,
@@ -184,6 +200,10 @@ class AdminController extends Controller
 
     public function storeCity(Request $request): RedirectResponse|JsonResponse
     {
+        if (! $request->user()?->isDispatcher()) {
+            return $this->forbiddenCityManagementResponse($request);
+        }
+
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:255'],
             'postal_code' => ['required', 'string', 'max:10'],
@@ -280,6 +300,10 @@ class AdminController extends Controller
 
     public function updateCityCoordinates(Request $request, City $city): JsonResponse|RedirectResponse
     {
+        if (! $request->user()?->isDispatcher()) {
+            return $this->forbiddenCityManagementResponse($request);
+        }
+
         $validated = $request->validate([
             'lat'    => ['required', 'numeric', 'between:-90,90'],
             'lng'    => ['required', 'numeric', 'between:-180,180'],
@@ -469,11 +493,13 @@ class AdminController extends Controller
 
     public function storeUser(Request $request): RedirectResponse
     {
+        $allowedRoles = implode(',', self::ROLE_OPTIONS);
+
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'role'     => ['required', 'in:admin,dispatcher,viewer'],
+            'role'     => ['required', 'in:'.$allowedRoles],
         ]);
 
         User::create($validated);
@@ -483,8 +509,10 @@ class AdminController extends Controller
 
     public function updateUserRole(Request $request, User $user): RedirectResponse
     {
+        $allowedRoles = implode(',', self::ROLE_OPTIONS);
+
         $validated = $request->validate([
-            'role' => ['required', 'in:admin,dispatcher,viewer'],
+            'role' => ['required', 'in:'.$allowedRoles],
         ]);
 
         $user->update($validated);
@@ -536,5 +564,16 @@ class AdminController extends Controller
         }
 
         return substr($normalized, 0, min(2, strlen($normalized)));
+    }
+
+    private function forbiddenCityManagementResponse(Request $request): JsonResponse|RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Acces reserve aux profils superieur et administrateur.',
+            ], 403);
+        }
+
+        return back()->with('error', 'Acces reserve aux profils superieur et administrateur.');
     }
 }

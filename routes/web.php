@@ -14,6 +14,9 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/map', [MapController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', fn () => redirect()->route('dashboard'));
+
+    Route::post('/map/cities', [AdminController::class, 'storeCity'])->name('map.cities.store');
+    Route::patch('/map/cities/{city}/coordinates', [AdminController::class, 'updateCityCoordinates'])->name('map.cities.coordinates');
 });
 
 Route::middleware('auth')->group(function () {

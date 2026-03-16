@@ -28,9 +28,9 @@
                     <input type="text" name="name" placeholder="Nom" class="border border-black rounded px-3 py-2" autocomplete="off" required>
                     <input type="email" name="email" placeholder="Email" class="border border-black rounded px-3 py-2" autocomplete="off" required>
                     <input type="password" name="password" placeholder="Mot de passe" class="border border-black rounded px-3 py-2" autocomplete="new-password" required>
-                    <select name="role" class="border border-black rounded px-3 py-2" required>
+                    <select name="role" class="border border-black rounded px-3 py-2" style="padding-right:2.25rem; min-width:110px;" required>
                         @foreach ($roles as $role)
-                            <option value="{{ $role }}">{{ $role }}</option>
+                            <option value="{{ $role }}">{{ $roleShortLabels[$role] ?? $role }}</option>
                         @endforeach
                     </select>
                     <div class="md:col-span-4 flex justify-center md:justify-start">
@@ -57,9 +57,9 @@
                                         <form method="POST" action="{{ route('admin.users.role', $user) }}" class="flex gap-2">
                                             @csrf
                                             @method('PATCH')
-                                            <select name="role" class="border border-black rounded px-2 py-1">
+                                            <select name="role" class="border border-black rounded px-2 py-1" style="padding-right:2.25rem; min-width:96px;">
                                                 @foreach ($roles as $role)
-                                                    <option value="{{ $role }}" @selected($user->role === $role)>{{ $role }}</option>
+                                                    <option value="{{ $role }}" @selected($user->role === $role)>{{ $roleShortLabels[$role] ?? $role }}</option>
                                                 @endforeach
                                             </select>
                                             <button type="submit" class="border border-black rounded px-2 py-1">Maj</button>

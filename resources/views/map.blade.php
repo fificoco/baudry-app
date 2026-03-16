@@ -118,7 +118,7 @@
             <button class="reset" id="resetBtn" type="button">Reset</button>
         </div>
 
-        @if(auth()->user()?->isAdmin())
+        @if(auth()->user()?->isDispatcher())
             <div class="coord-corrector">
                 <div class="gps-row">
                     <button class="btnStyle" id="toggleCorrectionBtn" type="button">Add-GPS</button>
@@ -137,13 +137,14 @@
     <script>
         window.__MAP_BOOTSTRAP = {
             isAdmin: @json((bool) auth()->user()?->isAdmin()),
+            canManageCities: @json((bool) auth()->user()?->isDispatcher()),
             hasActiveAgency: @json((bool) $activeAgency),
             mapStyle: @json($mapStyle ?? 'light'),
             mapZooms: @json($mapZooms ?? []),
             routes: {
                 citiesSearch: @json(url('/api/v1/cities')),
-                cityCoordinatesTemplate: @json(url('/admin/cities/__CITY__/coordinates')),
-                cityStore: @json(route('admin.cities.store')),
+                cityCoordinatesTemplate: @json(route('map.cities.coordinates', ['city' => '__CITY__'])),
+                cityStore: @json(route('map.cities.store')),
             }
         };
     </script>
