@@ -10,7 +10,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-[6.5rem] w-auto" />
+                        <x-application-logo class="block h-[6.5rem] w-auto {{ $isAdminPage ? 'lg:mb-4' : '' }}" />
                     </a>
                 </div>
 
@@ -27,7 +27,7 @@
 
             <div class="sm:items-center sm:ms-6 gap-3 sm:gap-4 self-end mb-[2.28rem] {{ $isAdminPage ? 'flex' : 'hidden sm:flex' }}">
                 <span class="text-2xl font-bold leading-6 text-black">{{ Auth::user()->name }}</span>
-                <form method="POST" action="{{ route('logout') }}" class="{{ $isAdminPage ? 'hidden sm:block' : '' }}">
+                <form method="POST" action="{{ route('logout') }}" class="{{ $isAdminPage ? 'hidden lg:block' : '' }}">
                     @csrf
                     <button
                         type="submit"
@@ -57,20 +57,7 @@
     </div>
 
     @if($isAdminPage)
-    <div class="hidden sm:block lg:hidden border-t border-gray-200 px-4 py-3">
-        <div class="flex items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-                <a href="{{ route('dashboard') }}" class="inline-flex h-[38px] min-w-[92px] items-center justify-center rounded-[8px] border border-black/45 bg-[#f7c600] px-3 text-base font-semibold whitespace-nowrap text-[#111]">
-                    {{ __('Carte') }}
-                </a>
-                <a href="https://www.baudry-sa.com" target="_blank" rel="noopener noreferrer" class="inline-flex h-[38px] min-w-[92px] items-center justify-center rounded-[8px] border border-black/45 bg-[#f7c600] px-3 text-base font-semibold whitespace-nowrap text-[#111]">
-                    {{ __('Siteweb') }}
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="sm:hidden border-t border-gray-200 px-4 py-3">
+    <div class="lg:hidden border-t border-gray-200 px-4 py-3">
         <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
                 <a href="{{ route('dashboard') }}" class="inline-flex h-[38px] min-w-[92px] items-center justify-center rounded-[8px] border border-black/45 bg-[#f7c600] px-3 text-base font-semibold whitespace-nowrap text-[#111]">
