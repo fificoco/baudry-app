@@ -15,6 +15,9 @@ const itineraireBtn = document.getElementById('itineraireBtn');
 const burgerBtn = document.getElementById('burgerBtn');
 const sidebar = document.getElementById('sidebar');
 const appHeader = document.querySelector('.app-header');
+const mobileZoneBar = document.getElementById('mobile-zone-bar');
+const mobileZoneText = document.getElementById('mobile-zone-text');
+const mobileResetBtn = document.getElementById('mobileResetBtn');
 const cityCpRow = document.querySelector('.city-cp-row');
 const cpField = document.getElementById('cpField');
 
@@ -34,6 +37,7 @@ let validateButtonMode = 'validate';
 let currentCity = null;
 let rayonAdresse = null;
 let statusClearTimer = null;
+let userPopupAutoCloseTimer = null;
 
 const map = L.map('map', {
   zoomControl: false,
@@ -112,6 +116,47 @@ function normalizeStr(value) {
     .trim();
 }
 
+function formatCityDisplayName(value) {
+  return (value || '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getViewportType() {
+  const width = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (width <= 500) return 'mobile';
+  if (width <= 1024) return 'tablet';
+  return 'desktop';
+}
+
+function getResponsiveZoom(kind = 'city') {
+  const viewport = getViewportType();
+
+  const configured = bootstrap.mapZooms || {};
+  const readZoom = (key, fallback) => {
+    const raw = Number(configured[key]);
+    if (!Number.isFinite(raw)) return fallback;
+    return Math.min(20, Math.max(3, raw));
+  };
+
+  const zoomByKind = {
+    city: {
+      mobile: readZoom('map_zoom_city_mobile', 11),
+      tablet: readZoom('map_zoom_city_tablet', 12),
+      desktop: readZoom('map_zoom_city_desktop', 13),
+    },
+    agency: {
+      mobile: readZoom('map_zoom_agency_mobile', 10),
+      tablet: readZoom('map_zoom_agency_tablet', 11),
+      desktop: readZoom('map_zoom_agency_desktop', 12),
+    },
+  };
+
+  const selectedKind = zoomByKind[kind] || zoomByKind.city;
+  return selectedKind[viewport] || selectedKind.desktop;
+}
+
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -122,7 +167,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function setStatus(message, isError = false) {
+function setStatus(message, isError = false, durationMs = 3000) {
   if (!correctionStatus) return;
   if (statusClearTimer) {
     clearTimeout(statusClearTimer);
@@ -146,7 +191,7 @@ function setStatus(message, isError = false) {
     correctionStatus.textContent = '';
     correctionStatus.classList.remove('status-error', 'status-success', 'status-info');
     statusClearTimer = null;
-  }, 3000);
+  }, durationMs);
 }
 
 function setValidateButtonMode(mode) {
@@ -284,6 +329,7 @@ async function createCityFromMarker() {
   setAddCityInputMode(false);
   setValidateButtonMode('validate');
   setStatus(`✅ Nouvelle ville créée : ${currentCity.name} (${currentCity.postal_code}).`);
+  closeSidebarAfterValidationOnMobile();
 }
 
 function updateAgenceMarker() {
@@ -296,7 +342,7 @@ function updateAgenceMarker() {
       iconSize: [32, 32],
     }),
   }).addTo(map).bindPopup(`<b>${agency.name}</b>`);
-  map.setView(agency.center, 12);
+  map.setView(agency.center, getResponsiveZoom('agency'));
 }
 
 function clearZones() {
@@ -361,7 +407,7 @@ function focusAgencyAndAllZones() {
     }
   }
 
-  map.setView(agency.center, 12);
+  map.setView(agency.center, getResponsiveZoom('agency'));
 }
 
 function updateZoneText(distance) {
@@ -378,6 +424,7 @@ function updateZoneText(distance) {
     const km = Math.round(distance / 1000);
     resultZone.className = 'resultZone-hors-zone';
     resultZone.textContent = `Hors zone de livraison (${km} km)`;
+    syncMobileZoneBarFromResult();
 
     drawZones({ all: true, distance: null });
     return;
@@ -393,7 +440,63 @@ function updateZoneText(distance) {
     }
   }
 
+  syncMobileZoneBarFromResult();
+
   drawZones({ all: false, distance });
+}
+
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 500px)').matches;
+}
+
+function dismissMobileKeyboard() {
+  if (!isMobileViewport()) return;
+
+  const activeElement = document.activeElement;
+  if (activeElement && typeof activeElement.blur === 'function') {
+    activeElement.blur();
+  }
+
+  [villeInput, cpInput, adresseInput]
+    .filter(Boolean)
+    .forEach((inputEl) => {
+      if (typeof inputEl.blur === 'function') {
+        inputEl.blur();
+      }
+    });
+}
+
+function clearMobileZoneBar() {
+  if (!mobileZoneBar || !mobileZoneText) return;
+
+  mobileZoneText.textContent = '';
+  mobileZoneText.classList.remove('resultZone-default', 'resultZone-hors-zone');
+  mobileZoneBar.classList.add('hidden');
+}
+
+function syncMobileZoneBarFromResult() {
+  if (!mobileZoneBar || !mobileZoneText) return;
+
+  if (!isMobileViewport()) {
+    clearMobileZoneBar();
+    return;
+  }
+
+  const text = (resultZone?.textContent || '').trim();
+  if (!text) {
+    clearMobileZoneBar();
+    return;
+  }
+
+  mobileZoneText.textContent = text;
+  mobileZoneText.classList.remove('resultZone-default', 'resultZone-hors-zone');
+  if (resultZone.classList.contains('resultZone-hors-zone')) {
+    mobileZoneText.classList.add('resultZone-hors-zone');
+  } else {
+    mobileZoneText.classList.add('resultZone-default');
+  }
+
+  mobileZoneBar.classList.remove('hidden');
 }
 
 function getZoneShortLabel(distance) {
@@ -428,8 +531,24 @@ function syncUserMarkerPopupWithZone(baseLabel) {
   userMarker.setPopupContent(`${baseLabel}<br>${zoneLabel}`).openPopup();
 }
 
+function scheduleUserMarkerPopupAutoClose(delayMs = 3500) {
+  if (userPopupAutoCloseTimer) {
+    clearTimeout(userPopupAutoCloseTimer);
+    userPopupAutoCloseTimer = null;
+  }
+
+  if (!userMarker) return;
+
+  userPopupAutoCloseTimer = window.setTimeout(() => {
+    if (userMarker && map.hasLayer(userMarker)) {
+      userMarker.closePopup();
+    }
+    userPopupAutoCloseTimer = null;
+  }, delayMs);
+}
+
 function setCombinedCityInput(name, postalCode) {
-  const cityName = (name || '').trim();
+  const cityName = formatCityDisplayName(name);
   const cityPostal = (postalCode || '').trim();
 
   if (villeInput) {
@@ -506,15 +625,20 @@ async function findCityByInputs(ville, code) {
 }
 
 function setUserMarker(lat, lng, popup) {
+  if (userPopupAutoCloseTimer) {
+    clearTimeout(userPopupAutoCloseTimer);
+    userPopupAutoCloseTimer = null;
+  }
+
   if (userMarker) map.removeLayer(userMarker);
   userMarker = L.marker([lat, lng], {
     icon: L.icon({
       iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',
       iconSize: [32, 32],
     }),
-  }).addTo(map).bindPopup(popup).openPopup();
+  }).addTo(map).bindPopup(popup, { autoPan: false }).openPopup();
 
-  const targetZoom = 12;
+  const targetZoom = getResponsiveZoom('city');
   map.setView([lat, lng], targetZoom, { animate: true });
 }
 
@@ -533,6 +657,8 @@ async function validateSearch() {
     resultZone.textContent = '❌ Aucune agence active configurée.';
     return;
   }
+
+  await ensureFirstSuggestionSelectionIfMissingPostal();
 
   const { ville, code } = parseVilleCodeInputs();
   const adresse = (adresseInput.value || '').trim();
@@ -557,6 +683,7 @@ async function validateSearch() {
       rayonAdresse = getDistance(agency.center[0], agency.center[1], lat, lng);
       updateZoneText(rayonAdresse);
       syncUserMarkerPopupWithZone(`Destination : ${fullAddress}`);
+      scheduleUserMarkerPopupAutoClose();
       closeSidebarAfterValidationOnMobile();
       return;
     }
@@ -575,6 +702,7 @@ async function validateSearch() {
     rayonAdresse = getDistance(agency.center[0], agency.center[1], city.lat, city.lng);
     updateZoneText(rayonAdresse);
     syncUserMarkerPopupWithZone(city.name);
+    scheduleUserMarkerPopupAutoClose();
     closeSidebarAfterValidationOnMobile();
   } catch {
     resultZone.className = 'resultZone-hors-zone';
@@ -719,6 +847,7 @@ async function saveGpsFromMarker() {
     setAddCityInputMode(false);
     setValidateButtonMode('validate');
     setStatus(`✅ Ville mise à jour : ${currentCity.name}.`);
+    closeSidebarAfterValidationOnMobile();
     return;
   }
 
@@ -741,7 +870,7 @@ map.on('click', (event) => {
 
 });
 
-validerBtn.addEventListener('click', async () => {
+async function runValidateAction() {
   if (validateButtonMode === 'save-city') {
     await createCityFromMarker();
     return;
@@ -753,16 +882,73 @@ validerBtn.addEventListener('click', async () => {
   }
 
   await validateSearch();
-});
+}
+
+validerBtn.addEventListener('click', runValidateAction);
+
+if (villeInput) {
+  villeInput.addEventListener('keydown', async (event) => {
+    if (event.key === 'ArrowDown') {
+      if (!currentVilleSuggestionItems.length) return;
+      event.preventDefault();
+      moveVilleSuggestionSelection(1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      if (!currentVilleSuggestionItems.length) return;
+      event.preventDefault();
+      moveVilleSuggestionSelection(-1);
+      return;
+    }
+
+    if (event.key !== 'Enter') return;
+
+    event.preventDefault();
+
+    if (!villeSuggestions.classList.contains('hidden')) {
+      applyCurrentVilleSuggestion();
+    }
+
+    await runValidateAction();
+  });
+}
+
+[cpInput, adresseInput]
+  .filter(Boolean)
+  .forEach((inputEl) => {
+    inputEl.addEventListener('keydown', async (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      await runValidateAction();
+    });
+  });
+
 resetBtn.addEventListener('click', () => {
+  resetSearchState();
+});
+
+if (mobileResetBtn) {
+  mobileResetBtn.addEventListener('click', () => {
+    resetSearchState();
+    clearMobileZoneBar();
+  });
+}
+
+function resetSearchState() {
   setCombinedCityInput('', '');
   adresseInput.value = '';
   resultZone.textContent = '';
   resultZone.className = 'resultZone-default';
+  clearMobileZoneBar();
 
   if (userMarker) {
     map.removeLayer(userMarker);
     userMarker = null;
+  }
+  if (userPopupAutoCloseTimer) {
+    clearTimeout(userPopupAutoCloseTimer);
+    userPopupAutoCloseTimer = null;
   }
   if (correctionPreviewMarker) {
     map.removeLayer(correctionPreviewMarker);
@@ -782,8 +968,8 @@ resetBtn.addEventListener('click', () => {
   zonesActives = false;
   clearZones();
   updateAgenceMarker();
-  setStatus('Réinitialisé.');
-});
+  setStatus('Reset ok.', false, 1500);
+}
 
 zoneBtn.addEventListener('click', () => {
   if (!bootstrap.hasActiveAgency) return;
@@ -841,47 +1027,124 @@ function syncMobileSidebarOffset() {
 }
 
 function closeSidebarAfterValidationOnMobile() {
-  if (window.innerWidth > 500) return;
   if (!sidebar) return;
+  if (!window.matchMedia('(max-width: 500px)').matches) return;
+
+  dismissMobileKeyboard();
+
+  if (!sidebar.classList.contains('open')) return;
+
   sidebar.classList.remove('open');
+  syncMobileZoneBarFromResult();
 
   window.setTimeout(() => {
     map.invalidateSize();
     if (!userMarker) return;
-    map.setView(userMarker.getLatLng(), map.getZoom(), { animate: true });
+    map.setView(userMarker.getLatLng(), getResponsiveZoom('city'), { animate: true });
   }, 160);
 }
 
 burgerBtn.addEventListener('click', () => {
   syncMobileSidebarOffset();
   sidebar.classList.toggle('open');
+
+  if (!isMobileViewport()) return;
+
+  if (sidebar.classList.contains('open')) {
+    clearMobileZoneBar();
+    return;
+  }
+
+  syncMobileZoneBarFromResult();
 });
 
 let villeTimer = null;
 const villeSuggestions = document.getElementById('suggestions-ville');
 let villeSuggestionRequestId = 0;
+let currentVilleSuggestionItems = [];
+let currentVilleSuggestionIndex = -1;
 
 function clearSuggestions(container) {
   if (!container) return;
   container.innerHTML = '';
   container.classList.add('hidden');
+  currentVilleSuggestionItems = [];
+  currentVilleSuggestionIndex = -1;
+}
+
+function updateVilleSuggestionHighlight(container) {
+  if (!container) return;
+
+  const buttons = Array.from(container.querySelectorAll('.suggestion-item'));
+  buttons.forEach((button, index) => {
+    const isActive = index === currentVilleSuggestionIndex;
+    button.classList.toggle('is-preselected', isActive);
+    button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+}
+
+function moveVilleSuggestionSelection(delta) {
+  if (!villeSuggestions) return;
+  if (!currentVilleSuggestionItems.length) return;
+
+  const lastIndex = currentVilleSuggestionItems.length - 1;
+
+  if (currentVilleSuggestionIndex < 0) {
+    currentVilleSuggestionIndex = 0;
+  } else {
+    currentVilleSuggestionIndex += delta;
+    if (currentVilleSuggestionIndex < 0) currentVilleSuggestionIndex = lastIndex;
+    if (currentVilleSuggestionIndex > lastIndex) currentVilleSuggestionIndex = 0;
+  }
+
+  updateVilleSuggestionHighlight(villeSuggestions);
+
+  const activeButton = villeSuggestions.querySelectorAll('.suggestion-item')[currentVilleSuggestionIndex];
+  if (activeButton && typeof activeButton.scrollIntoView === 'function') {
+    activeButton.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function applyCurrentVilleSuggestion() {
+  if (!currentVilleSuggestionItems.length) return false;
+
+  const safeIndex = currentVilleSuggestionIndex >= 0 ? currentVilleSuggestionIndex : 0;
+  const item = currentVilleSuggestionItems[safeIndex];
+  if (!item) return false;
+
+  setCombinedCityInput(item.cityName, item.postalCode);
+  clearSuggestions(villeSuggestions);
+
+  return true;
 }
 
 function renderSuggestions(container, items, onSelect) {
   if (!container) return;
   container.innerHTML = '';
+  currentVilleSuggestionItems = items;
+  currentVilleSuggestionIndex = items.length ? 0 : -1;
 
   if (!items.length) {
     container.classList.add('hidden');
     return;
   }
 
-  items.forEach((item) => {
+  items.forEach((item, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'suggestion-item';
+    if (index === currentVilleSuggestionIndex) {
+      btn.classList.add('is-preselected');
+      btn.setAttribute('aria-selected', 'true');
+    } else {
+      btn.setAttribute('aria-selected', 'false');
+    }
     btn.textContent = item.label;
-    btn.addEventListener('click', () => onSelect(item));
+    btn.addEventListener('click', () => {
+      currentVilleSuggestionIndex = index;
+      updateVilleSuggestionHighlight(container);
+      onSelect(item);
+    });
     container.appendChild(btn);
   });
 
@@ -905,12 +1168,13 @@ async function loadVilleSuggestions() {
     const seen = new Set();
     const items = [];
     cities.slice(0, 15).forEach((city) => {
-      const label = `${city.name} (${city.postal_code})`;
+      const displayName = formatCityDisplayName(city.name);
+      const label = `${displayName} (${city.postal_code})`;
       if (seen.has(label)) return;
       seen.add(label);
       items.push({
         label,
-        cityName: city.name,
+        cityName: displayName,
         postalCode: city.postal_code,
       });
     });
@@ -923,6 +1187,30 @@ async function loadVilleSuggestions() {
     if (requestId === villeSuggestionRequestId) {
       clearSuggestions(villeSuggestions);
     }
+  }
+}
+
+async function ensureFirstSuggestionSelectionIfMissingPostal() {
+  const parsed = parseVilleCodeInputs();
+  if (parsed.code || !parsed.ville) return;
+
+  if (currentVilleSuggestionItems.length > 0) {
+    const first = currentVilleSuggestionItems[0];
+    setCombinedCityInput(first.cityName, first.postalCode);
+    clearSuggestions(villeSuggestions);
+    return;
+  }
+
+  try {
+    const isPostalSearch = /^\d{1,5}$/.test(parsed.ville);
+    const cities = await searchCities(isPostalSearch ? '' : parsed.ville, isPostalSearch ? parsed.ville : '');
+    if (!cities || cities.length === 0) return;
+
+    const first = cities[0];
+    setCombinedCityInput(formatCityDisplayName(first.name), String(first.postal_code || ''));
+    clearSuggestions(villeSuggestions);
+  } catch {
+    // Keep current inputs unchanged on fallback failure.
   }
 }
 
@@ -1002,5 +1290,6 @@ window.addEventListener('load', () => {
 
 window.addEventListener('resize', () => {
   syncMobileSidebarOffset();
+  syncMobileZoneBarFromResult();
   map.invalidateSize();
 });

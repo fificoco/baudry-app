@@ -76,6 +76,11 @@
         </div>
     </header>
 
+    <div id="mobile-zone-bar" class="mobile-zone-bar hidden" aria-live="polite">
+        <div id="mobile-zone-text" class="mobile-zone-text"></div>
+        <button id="mobileResetBtn" class="mobile-reset-btn" type="button">Reset</button>
+    </div>
+
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-content">
         @if($activeAgency)
@@ -134,6 +139,7 @@
             isAdmin: @json((bool) auth()->user()?->isAdmin()),
             hasActiveAgency: @json((bool) $activeAgency),
             mapStyle: @json($mapStyle ?? 'light'),
+            mapZooms: @json($mapZooms ?? []),
             routes: {
                 citiesSearch: @json(url('/api/v1/cities')),
                 cityCoordinatesTemplate: @json(url('/admin/cities/__CITY__/coordinates')),

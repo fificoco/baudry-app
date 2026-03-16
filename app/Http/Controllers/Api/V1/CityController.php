@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateCityCoordinatesRequest;
 use App\Http\Resources\CityCoordinateCorrectionResource;
 use App\Http\Resources\CityResource;
 use App\Models\City;
+use App\Models\Department;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,22 +20,49 @@ class CityController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $activeDepartmentIds = Department::query()
+            ->where('is_active', true)
+            ->pluck('id');
+
         $query = City::query()
             ->where('is_active', true)
-            ->whereHas('department', fn($departmentQuery) => $departmentQuery->where('is_active', true));
+            ->whereIn('department_id', $activeDepartmentIds);
 
         if ($search = $request->input('search')) {
-            $query->where('name', 'like', "%{$search}%");
+            $search = trim((string) $search);
+            $escapedSearch = $this->escapeLike($search);
+            $containsPattern = "%{$escapedSearch}%";
+            $prefixPattern = "{$escapedSearch}%";
+            $wordPrefixPattern = "% {$escapedSearch}%";
+
+            $query->where(function ($searchQuery) use ($containsPattern) {
+                $searchQuery->where('name', 'like', $containsPattern)
+                    ->orWhereRaw("REPLACE(name, '-', ' ') LIKE ?", [$containsPattern]);
+            });
+
+            $query->orderByRaw(
+                "CASE
+                    WHEN name LIKE ? THEN 0
+                    WHEN REPLACE(name, '-', ' ') LIKE ? THEN 0
+                    WHEN name LIKE ? THEN 1
+                    WHEN REPLACE(name, '-', ' ') LIKE ? THEN 1
+                    ELSE 2
+                END",
+                [$prefixPattern, $prefixPattern, $wordPrefixPattern, $wordPrefixPattern]
+            );
         }
 
         if ($postalCode = $request->input('postal_code')) {
             $query->where('postal_code', 'like', "{$postalCode}%");
         }
 
+        $perPage = max(1, min(50, $request->integer('per_page', 20)));
+
         $cities = $query
             ->with('department:id,code,name,is_active')
             ->orderBy('name')
-            ->paginate($request->integer('per_page', 50));
+            ->limit($perPage)
+            ->get();
 
         return CityResource::collection($cities);
     }
@@ -88,5 +116,10 @@ class CityController extends Controller
         $corrections = $city->coordinateCorrections()->with('updatedBy')->get();
 
         return CityCoordinateCorrectionResource::collection($corrections);
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 }

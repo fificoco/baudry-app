@@ -22,6 +22,15 @@ class AdminController extends Controller
         'voyager' => 'Voyager',
     ];
 
+    private const MAP_ZOOM_DEFAULTS = [
+        'map_zoom_city_mobile' => 11,
+        'map_zoom_city_tablet' => 12,
+        'map_zoom_city_desktop' => 13,
+        'map_zoom_agency_mobile' => 10,
+        'map_zoom_agency_tablet' => 11,
+        'map_zoom_agency_desktop' => 12,
+    ];
+
     public function index(Request $request): View|RedirectResponse
     {
         $activeAgency = Agency::where('is_active', true)->orderBy('name')->first();
@@ -61,6 +70,8 @@ class AdminController extends Controller
             $currentMapStyle = 'light';
         }
 
+        $currentMapZooms = $this->getMapZoomSettings();
+
         return view('admin.index', [
             'users'       => User::orderBy('name')->get(),
             'cities'      => City::orderBy('name')->orderBy('id')->paginate($perPage)->withQueryString(),
@@ -74,6 +85,7 @@ class AdminController extends Controller
             'roles'       => ['admin', 'dispatcher', 'viewer'],
             'mapStyleOptions' => self::MAP_STYLE_OPTIONS,
             'currentMapStyle' => $currentMapStyle,
+            'currentMapZooms' => $currentMapZooms,
         ]);
     }
 
@@ -122,6 +134,52 @@ class AdminController extends Controller
         AppSetting::setValue('map_style', $validated['map_style']);
 
         return back()->with('success', 'Style de carte mis à jour.');
+    }
+
+    public function updateMapZoom(Request $request): RedirectResponse
+    {
+        $normalizedInputs = [];
+        foreach (array_keys(self::MAP_ZOOM_DEFAULTS) as $key) {
+            $raw = trim((string) $request->input($key, ''));
+            $normalizedInputs[$key] = str_replace(',', '.', $raw);
+        }
+        $request->merge($normalizedInputs);
+
+        $validated = $request->validate([
+            'map_zoom_city_mobile' => ['required', 'numeric', 'between:3,20'],
+            'map_zoom_city_tablet' => ['required', 'numeric', 'between:3,20'],
+            'map_zoom_city_desktop' => ['required', 'numeric', 'between:3,20'],
+            'map_zoom_agency_mobile' => ['required', 'numeric', 'between:3,20'],
+            'map_zoom_agency_tablet' => ['required', 'numeric', 'between:3,20'],
+            'map_zoom_agency_desktop' => ['required', 'numeric', 'between:3,20'],
+        ]);
+
+        foreach (self::MAP_ZOOM_DEFAULTS as $key => $default) {
+            $value = (float) ($validated[$key] ?? $default);
+            $clamped = min(20, max(3, $value));
+            AppSetting::setValue($key, $this->formatZoomSetting($clamped));
+        }
+
+        return back()->with('success', 'Zooms de carte mis à jour.');
+    }
+
+    private function getMapZoomSettings(): array
+    {
+        $settings = [];
+
+        foreach (self::MAP_ZOOM_DEFAULTS as $key => $default) {
+            $raw = AppSetting::getValue($key, (string) $default);
+            $value = is_numeric($raw) ? (float) $raw : (float) $default;
+            $settings[$key] = min(20, max(3, $value));
+        }
+
+        return $settings;
+    }
+
+    private function formatZoomSetting(float $value): string
+    {
+        $formatted = number_format($value, 2, '.', '');
+        return rtrim(rtrim($formatted, '0'), '.');
     }
 
     public function storeCity(Request $request): RedirectResponse|JsonResponse

@@ -270,6 +270,12 @@ body {
     background: rgba(247, 198, 0, 0.2);
 }
 
+.suggestion-item.is-preselected {
+    background: rgba(247, 198, 0, 0.26);
+    font-weight: 700;
+    outline: 1px solid rgba(17, 17, 17, 0.2);
+}
+
 .sidebar .narrow-field {
     width: 66.6667%;
 }
@@ -351,6 +357,20 @@ body {
     .nav-buttons .btnStyle {
         width: 24.5%;
         margin: 0 0 0 auto;
+    }
+
+    .coord-corrector {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    #correctionStatus {
+        width: fit-content;
+        max-width: 220px;
+        margin-left: auto;
+        margin-right: 0;
+        text-align: center;
     }
 }
 
@@ -547,6 +567,10 @@ body {
     display: none;
 }
 
+.mobile-zone-bar {
+    display: none;
+}
+
 @media (max-width: 500px) {
     .app-header {
         left: 10px;
@@ -621,6 +645,10 @@ body {
         text-align: center;
     }
 
+    #result-zone {
+        margin-bottom: 12px;
+    }
+
     .city-cp-row,
     .gps-row,
     .action-row,
@@ -693,5 +721,60 @@ body {
         margin-left: auto;
         margin-right: auto;
         text-align: center;
+    }
+
+    .mobile-zone-bar {
+        position: fixed;
+        top: var(--mobile-header-offset, 150px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(66.6667vw, 420px);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0;
+        z-index: 1204;
+    }
+
+    .mobile-zone-bar.hidden {
+        display: none;
+    }
+
+    .mobile-zone-text {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: #111;
+        text-align: center;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(17, 17, 17, 0.45);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    .mobile-zone-text.resultZone-hors-zone {
+        color: #c0392b;
+    }
+
+    .mobile-zone-text.resultZone-default {
+        color: #1e7a2e;
+    }
+
+    .mobile-reset-btn {
+        min-width: 70px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid rgba(17, 17, 17, 0.45);
+        background: rgba(17, 17, 17, 0.85);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 0 10px;
+        cursor: pointer;
+        flex: 0 0 auto;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
     }
 }

@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('index');
     Route::patch('/map-style', [AdminController::class, 'updateMapStyle'])->name('map-style.update');
+    Route::patch('/map-zoom', [AdminController::class, 'updateMapZoom'])->name('map-zoom.update');
 
     Route::get('/cities/search', [AdminController::class, 'searchCities'])->name('cities.search');
     Route::post('/cities', [AdminController::class, 'storeCity'])->name('cities.store');
